@@ -1,4 +1,5 @@
-use crate::settings::*;
+use std::panic::UnwindSafe;
+
 use crate::{
     moves::{Move, Play, Position},
     piece::{Color, Kind, Piece},
@@ -22,7 +23,7 @@ fn cast<'a, T: Iterator<Item = Position> + 'a>(obj: T) -> Box<dyn Iterator<Item 
     Box::new(obj) as Box<dyn Iterator<Item = Position>>
 }
 type Positions<'a> = Box<dyn Iterator<Item = Position> + 'a>;
-
+impl UnwindSafe for Board {}
 impl Board {
     pub fn apply(&mut self, move_: Move) {
         let piece = self[move_.from].take();
@@ -44,11 +45,14 @@ impl Board {
     //         _ => panic!(),
     //     }
     // }
-    pub fn get(&self, pos: Position) -> Option<Piece> {
-        *self
+    pub fn get(&self, pos: Position) -> Option<Option<Piece>> {
+        self
             .table
-            .get(pos.rank as usize)?
-            .get(pos.file as usize)?
+            .get(pos.rank as usize)
+            .map(|row| {
+                row.get(pos.file as usize)
+                    .copied()
+            })?
     }
 
     pub fn colored_pieces<'a>(
@@ -56,8 +60,7 @@ impl Board {
         color: Color,
     ) -> impl Iterator<Item = (Piece, Position)> + 'a {
         (0..8)
-            .map(|rank| (0..8).map(move |file| (rank, file)))
-            .flatten()
+            .flat_map(|rank| (0..8).map(move |file| (rank, file)))
             .map(Position::from)
             .filter_map(move |pos| (self[pos]?, pos).pipe(Some))
             .filter(move |(piece, _)| piece.color == color)
@@ -65,8 +68,7 @@ impl Board {
     pub fn moves<'a>(&'a self, turn: Color) -> impl Iterator<Item = Play> + 'a {
         self.colored_pieces(turn)
             .map(|(_, pos)| pos)
-            .map(|pos| self.moves_for(pos))
-            .flatten()
+            .flat_map(|pos| self.moves_for(pos))
     }
 
     #[allow(unreachable_patterns)]
@@ -74,7 +76,7 @@ impl Board {
         use itertools::Either::*;
         self[pos]
             .into_iter()
-            .map(move |piece| match piece.kind {
+            .flat_map(move |piece| match piece.kind {
                 Bishop => self
                     .bishop_moves(pos, piece.color)
                     .pipe(Left)
@@ -117,7 +119,6 @@ impl Board {
                     .pipe(Right)
                     .pipe(Right),
             })
-            .flatten()
     }
     /// # Bishop moves
     /// ready
@@ -181,12 +182,6 @@ impl Board {
                 }
             })
     }
-    #[inline]
-    fn is_available(&self, pos: Position, color: Color) -> bool {
-        self.get(pos)
-            .map(|piece| piece.color != color)
-            .unwrap_or(true)
-    }
 
     fn is_capture(&self, pos: Position, color: Color) -> bool {
         self[pos]
@@ -225,7 +220,7 @@ impl Board {
             file: from.file + file,
         };
         let r#move = Move { to, from };
-        match self.get(to) {
+        match self.get(to)? {
             Some(piece) if piece.color == color => Play::Defense(r#move, piece),
             Some(piece) => Play::Capture(r#move, piece),
             None => Play::Move(r#move),

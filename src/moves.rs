@@ -1,7 +1,7 @@
 use crate::piece::Piece;
 
 /// A move represents the change of position of a piece.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Move {
     pub to: Position,
     pub from: Position,
@@ -33,7 +33,7 @@ pub struct Position {
 
 impl Position {
     pub fn relative<'a>(self, pos: &'a [(isize, isize)]) -> impl Iterator<Item = Self> + 'a {
-        pos.into_iter()
+        pos.iter()
             .copied()
             .map(|x| (x.0, x.1))
             .map(Position::from)

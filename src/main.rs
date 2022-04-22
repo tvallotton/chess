@@ -1,3 +1,4 @@
+#![feature(binary_heap_retain)]
 #![doc = include_str!("../readme.md")]
 #![allow(dead_code)]
 use piece::Color;
@@ -12,12 +13,12 @@ mod start_board;
 mod table;
 
 fn main() {
-    let options = opt::Opt::from_args();
+    let _options = opt::Opt::from_args();
 
-    let board = Board::default();
-    let moves: Vec<_> = board
-        .moves(Color::White)
-        .collect();
-    println!("{moves:?}");
-    
+    let node = minimax::MiniMaxNode::default();
+    let mut board = node.board;
+    let move_ = node.build(); 
+    println!("{:?}", move_); 
+    board.apply(move_);
+    println!("{}", board);
 }

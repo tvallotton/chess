@@ -38,12 +38,20 @@ impl Index<(Position, Color)> for ValueTable {
     }
 }
 
+
 static SETTINGS: Lazy<Value> = Lazy::new(|| {
     let settings = crate::opt::options().settings_path;
     let json = std::fs::read_to_string(settings).unwrap();
     serde_json::from_str(&json).unwrap()
 });
 
+
+pub static MAX_NODES: Lazy<usize> = Lazy::new(|| {
+    SETTINGS["max_nodes"]
+        .clone()
+        .pipe(serde_json::from_value)
+        .unwrap()
+});
 pub static DEFENDED: Lazy<f32> = Lazy::new(|| {
     SETTINGS["defended_value"]
         .clone()

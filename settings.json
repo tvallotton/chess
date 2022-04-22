@@ -1,4 +1,5 @@
 {
+    "max_nodes": 10000, 
     "defended_value": 1.0, 
     "attacked_value": 1.0, 
     "available_moves": 0.5, 

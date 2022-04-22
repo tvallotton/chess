@@ -2,8 +2,8 @@ use std::fmt::{Display};
 
 use crate::piece::*;
 use crate::table::{Board, Castle};
-use Color::*;
-use Kind::*;
+
+
 impl Default for Board {
     fn default() -> Self {
         START_BOARD
