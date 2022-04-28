@@ -1,3 +1,5 @@
+use std::ops::{BitAnd, BitOr};
+
 pub use Color::*;
 pub use Kind::*;
 #[derive(Clone, Copy, Debug)]
@@ -21,11 +23,24 @@ pub enum Color {
     White,
 }
 
+impl BitOr<Kind> for Color {
+    type Output = Piece;
+    fn bitor(self, kind: Kind) -> Self::Output {
+        Piece { kind, color: self }
+    }
+}
+
 impl Color {
     pub fn opposite(self) -> Color {
         match self {
             Black => White,
             White => Black,
+        }
+    }
+    pub fn pawn_blockking_rank(self) -> isize {
+        match self {
+            Black => 2,
+            White => 5,
         }
     }
     pub fn pawn_start(self) -> isize {

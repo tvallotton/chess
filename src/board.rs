@@ -3,7 +3,9 @@ use std::panic::UnwindSafe;
 use crate::{
     moves::{Move, Play, Position},
     piece::{Color, Kind, Piece},
+    settings::{value, ATTACKED, AVAILABLE_MOVES, DEFENDED, PIECE},
 };
+
 use tap::prelude::*;
 use Kind::*;
 
@@ -25,9 +27,77 @@ fn cast<'a, T: Iterator<Item = Position> + 'a>(obj: T) -> Box<dyn Iterator<Item 
 type Positions<'a> = Box<dyn Iterator<Item = Position> + 'a>;
 impl UnwindSafe for Board {}
 impl Board {
-    pub fn apply(&mut self, move_: Move) {
-        let piece = self[move_.from].take();
-        self[move_.to] = piece;
+    pub fn empty() -> Board {
+        Board {
+            table: [[None; 8]; 8],
+            black_castle: Castle {
+                kingside: true,
+                queenside: true,
+            },
+            white_castle: Castle {
+                kingside: true,
+                queenside: true,
+            },
+        }
+    }
+
+    pub fn apply(&self, mov: Move) -> Board {
+        let mut board = *self;
+        let piece = board[mov.from].take();
+
+        board[mov.to] = piece;
+        if [0, 7].contains(&mov.to.rank) {
+            match board[mov.to].unwrap() {
+                Piece { kind: Pawn, color } => {
+                    board[mov.to] = Some(Piece { kind: Queen, color });
+                }
+                _ => (),
+            }
+        }
+
+        board
+    }
+    #[inline]
+    pub fn heuristic(&self, turn: Color) -> f32 {
+        let mut score = 0.0;
+        for i in 0..8 {
+            for j in 0..8 {
+                let pos = (i, j).into();
+                if let Some(piece) = self[pos] {
+                    let mut piece_val = *PIECE * value((piece, pos));
+
+                    self.plays_for(pos)
+                        .for_each(|play| {
+                            piece_val += *AVAILABLE_MOVES;
+
+                            match play {
+                                Play::Capture(mov, taken) => {
+                                    piece_val += *ATTACKED * value((taken, mov.to))
+                                        / value((piece, mov.from));
+                                    piece_val += *PIECE * value((piece, mov.to));
+                                    piece_val -= *PIECE * value((piece, mov.from));
+                                }
+                                Play::Defense(mov, def) => {
+                                    piece_val += *DEFENDED * value((piece, mov.from)) / value((def, mov.to));
+                                    piece_val += *PIECE * value((piece, mov.to));
+                                    piece_val -= *PIECE * value((piece, mov.from));
+                                }
+                                Play::Move(mov) => {
+                                    piece_val += *PIECE * value((piece, mov.to));
+                                    piece_val -= *PIECE * value((piece, mov.from));
+                                }
+                                _ => panic!(),
+                            }
+                        });
+                    if piece.color == turn {
+                        score += piece_val;
+                    } else {
+                        score -= piece_val;
+                    }
+                }
+            }
+        }
+        score
     }
 
     // pub fn apply(&mut self, play: Play) -> Option<f32> {
@@ -46,8 +116,7 @@ impl Board {
     //     }
     // }
     pub fn get(&self, pos: Position) -> Option<Option<Piece>> {
-        self
-            .table
+        self.table
             .get(pos.rank as usize)
             .map(|row| {
                 row.get(pos.file as usize)
@@ -68,11 +137,11 @@ impl Board {
     pub fn moves<'a>(&'a self, turn: Color) -> impl Iterator<Item = Play> + 'a {
         self.colored_pieces(turn)
             .map(|(_, pos)| pos)
-            .flat_map(|pos| self.moves_for(pos))
+            .flat_map(|pos| self.plays_for(pos))
     }
 
     #[allow(unreachable_patterns)]
-    pub fn moves_for<'a>(&'a self, pos: Position) -> impl Iterator<Item = Play> + 'a {
+    pub fn plays_for<'a>(&'a self, pos: Position) -> impl Iterator<Item = Play> + 'a {
         use itertools::Either::*;
         self[pos]
             .into_iter()
@@ -93,7 +162,7 @@ impl Board {
                     .pipe(Right)
                     .pipe(Left),
                 Knight => self
-                    .king_moves(pos, piece.color)
+                    .knight_moves(pos, piece.color)
                     .pipe(Left)
                     .pipe(Right)
                     .pipe(Right),
@@ -149,7 +218,7 @@ impl Board {
     /// * basic moves
     /// ## missing
     /// * castling
-    fn king_moves<'a>(&'a self, pos: Position, color: Color) -> impl Iterator<Item = Play> + 'a {
+    fn king_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Play> {
         self.relative(pos, color, 0, 1)
             .into_iter()
             .chain(self.relative(pos, color, 0, -1))
@@ -169,13 +238,15 @@ impl Board {
     /// ## missing
     /// 1. pawn passant
     /// 2. promotion
-    fn pawn_moves<'a>(&'a self, pos: Position, color: Color) -> impl Iterator<Item = Play> {
+    fn pawn_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Play> {
         self.capture_only(pos, color, color.pawn_dir(), 1)
             .into_iter()
             .chain(self.capture_only(pos, color, color.pawn_dir(), -1))
             .chain(self.moves_only(pos, color, color.pawn_dir(), 0))
             .chain({
-                if pos.rank == color.pawn_start() {
+                let blocking: Position = (color.pawn_blockking_rank(), pos.file).into();
+                let piece = self[blocking];
+                if pos.rank == color.pawn_start() && piece.is_none() {
                     self.moves_only(pos, color, 2 * color.pawn_dir(), 0)
                 } else {
                     None
@@ -183,6 +254,17 @@ impl Board {
             })
     }
 
+    fn knight_moves<'a>(&'_ self, pos: Position, color: Color) -> impl Iterator<Item = Play> {
+        None.into_iter()
+            .chain(self.relative(pos, color, 2, -1))
+            .chain(self.relative(pos, color, 2, 1))
+            .chain(self.relative(pos, color, -2, -1))
+            .chain(self.relative(pos, color, -2, 1))
+            .chain(self.relative(pos, color, -1, 2))
+            .chain(self.relative(pos, color, 1, 2))
+            .chain(self.relative(pos, color, -1, -2))
+            .chain(self.relative(pos, color, 1, -2))
+    }
     fn is_capture(&self, pos: Position, color: Color) -> bool {
         self[pos]
             .map(|piece| piece.color != color)
@@ -228,13 +310,13 @@ impl Board {
         .pipe(Some)
     }
 
-    pub fn walk<'a>(
-        &'a self,
+    pub fn walk(
+        &'_ self,
         pos: Position,
         color: Color,
         rank: isize,
         file: isize,
-    ) -> impl Iterator<Item = Play> + 'a {
+    ) -> impl Iterator<Item = Play> + '_ {
         (1..8)
             .map(move |i| (pos.rank + rank * i, pos.file + file * i))
             .take_while(|pos| 0 <= pos.0 && pos.0 < 8)
@@ -245,7 +327,7 @@ impl Board {
                     rank: iterpos.rank - rank,
                     file: iterpos.file - file,
                 };
-                pos == iterpos || self[prev].is_some()
+                pos == iterpos || pos == prev || self[prev].is_none()
             })
             .map(move |to| {
                 let r#move = Move { to, from: pos };
@@ -258,17 +340,16 @@ impl Board {
     }
 }
 
-impl std::ops::Index<Position> for Board {
+impl<P: Into<Position>> std::ops::Index<P> for Board {
     type Output = Option<Piece>;
-    fn index(&self, index: Position) -> &Self::Output {
+    fn index(&self, index: P) -> &Self::Output {
+        let index = index.into();
         &self.table[index.rank as usize][index.file as usize]
     }
 }
-impl std::ops::IndexMut<Position> for Board {
-    fn index_mut(&mut self, index: Position) -> &mut Option<Piece> {
+impl<P: Into<Position>> std::ops::IndexMut<P> for Board {
+    fn index_mut(&mut self, index: P) -> &mut Option<Piece> {
+        let index = index.into();
         &mut self.table[index.rank as usize][index.file as usize]
     }
 }
-
-#[test]
-fn foo() {}

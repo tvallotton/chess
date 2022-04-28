@@ -12,6 +12,8 @@ pub struct Opt {
     pub play_as_black: bool,
     #[structopt(short = "s", long, default_value = "./settings.json")]
     pub settings_path: String,
+    #[structopt(long)]
+    pub nocapture: bool,
 }
 
 pub fn options() -> Opt {

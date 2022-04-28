@@ -10,6 +10,7 @@ use tap::prelude::*;
 
 use Kind::*;
 
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ValueTable {
     white: [[f32; 8]; 8],
@@ -37,7 +38,9 @@ impl Index<(Position, Color)> for ValueTable {
         }
     }
 }
+// fn setting<T: Des>(key: &str) -> {
 
+// }
 
 static SETTINGS: Lazy<Value> = Lazy::new(|| {
     let settings = crate::opt::options().settings_path;
@@ -45,9 +48,22 @@ static SETTINGS: Lazy<Value> = Lazy::new(|| {
     serde_json::from_str(&json).unwrap()
 });
 
+pub static PIECE: Lazy<f32> = Lazy::new(|| {
+    SETTINGS["piece_value"]
+        .clone()
+        .pipe(serde_json::from_value)
+        .unwrap()
+});
 
 pub static MAX_NODES: Lazy<usize> = Lazy::new(|| {
     SETTINGS["max_nodes"]
+        .clone()
+        .pipe(serde_json::from_value)
+        .unwrap()
+});
+
+pub static MAX_ITER: Lazy<usize> = Lazy::new(|| {
+    SETTINGS["max_iter"]
         .clone()
         .pipe(serde_json::from_value)
         .unwrap()

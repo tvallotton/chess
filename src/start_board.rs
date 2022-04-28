@@ -1,8 +1,7 @@
-use std::fmt::{Display};
+use std::fmt::Display;
 
+use crate::board::{Board, Castle};
 use crate::piece::*;
-use crate::table::{Board, Castle};
-
 
 impl Default for Board {
     fn default() -> Self {
@@ -13,8 +12,14 @@ impl Default for Board {
 const START_BOARD: Board = {
     let empty = [None, None, None, None, None, None, None, None];
     Board {
-        white_castle: Castle { queenside: true, kingside: true },
-        black_castle: Castle { queenside: true, kingside: true },
+        white_castle: Castle {
+            queenside: true,
+            kingside: true,
+        },
+        black_castle: Castle {
+            queenside: true,
+            kingside: true,
+        },
         table: [
             [
                 Some(BL_ROOK),
@@ -74,7 +79,7 @@ impl Display for Board {
             if r == 0 {
                 write!(f, "  ╔═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╗")?;
             }
-            write!(f, "\n{} ║", r + 1)?;
+            write!(f, "\n{} ║", r)?;
             for option in row {
                 if let Some(piece) = option {
                     match (piece.kind, piece.color) {
@@ -92,23 +97,17 @@ impl Display for Board {
                         (Knight, Black) => write!(f, " ♞ ║")?,
                     }
                 } else {
-                    write!(f, "   ║")?; 
+                    write!(f, "   ║")?;
                 }
-                
             }
 
             if r == 7 {
                 writeln!(f, "\n  ╚═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╝")?;
-                write!(f,   "    A   B   C   D   E   F   G   H")?;
+                write!(f, "    0   1   2   3   4   5   6   7")?;
             } else {
                 write!(f, "\n  ╠═══╬═══╬═══╬═══╬═══╬═══╬═══╬═══╣")?;
             }
         }
-
         Ok(())
     }
-}
-#[test]
-fn foo() {
-    println!("{START_BOARD}"); 
 }
