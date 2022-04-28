@@ -32,7 +32,7 @@ pub struct Position {
 }
 
 impl Position {
-    pub fn relative<'a>(self, pos: &'a [(isize, isize)]) -> impl Iterator<Item = Self> + 'a {
+    pub fn relative(self, pos: &'_ [(isize, isize)]) -> impl Iterator<Item = Self> + '_ {
         pos.iter()
             .copied()
             .map(|x| (x.0, x.1))

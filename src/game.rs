@@ -1,6 +1,6 @@
 use serde_json::from_str;
 use structopt::StructOpt;
-use tap::Pipe;
+
 
 use crate::board::Board;
 use crate::minimax::MiniMaxNode;

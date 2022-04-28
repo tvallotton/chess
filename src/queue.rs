@@ -1,5 +1,5 @@
 
-use crate::moves::{Move, self}; 
+use crate::moves::{Move}; 
 
 struct Queue {
     queue: [Option<Move>; 6], 

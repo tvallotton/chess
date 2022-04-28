@@ -2,12 +2,12 @@
 #![doc = include_str!("../readme.md")]
 #![allow(dead_code)]
 
-use moves::Play;
-use piece::Color;
-use serde_json::from_value;
+
+
+
 use structopt::StructOpt;
 
-use crate::{board::Board, piece::Kind, opt::Opt};
+
 mod board;
 mod minimax;
 mod moves;

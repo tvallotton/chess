@@ -5,8 +5,6 @@ use crate::parameters::*;
 use crate::parameters::{ATTACKED, DEFENDED};
 use crate::{board::Board, piece::Color};
 
-use std::collections::BinaryHeap;
-
 struct Game {
     node: MiniMaxNode,
     opt: crate::opt::Opt,
@@ -79,25 +77,22 @@ impl MiniMaxNode {
         }
     }
     pub fn children(&mut self, params: &Params) -> ArrayVec<Self, 256> {
-        let plays = self.board.moves(self.turn);
+        let _plays = self.board.moves(self.turn);
         let mut children = arrayvec::ArrayVec::<_, 256>::new();
         self.board
             .moves(self.turn)
             .for_each(|play| {
-                let r#move;
-                match play {
+                let r#move = match play {
                     Play::Defense(_, _) => {
                         return;
                     }
                     Play::Capture(move_, _) => {
                         assert!(self.board[move_.to].is_some());
-                        r#move = move_;
+                        move_
                     }
-                    Play::Move(move_) => {
-                        r#move = move_;
-                    }
+                    Play::Move(move_) => move_,
                     _ => panic!("castle not implemented"),
-                }
+                };
                 let child_node = Self::new(
                     self.board.apply(r#move),
                     self.turn.opposite(),

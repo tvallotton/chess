@@ -2,7 +2,7 @@ use std::panic::UnwindSafe;
 
 use crate::{
     moves::{Move, Play, Position},
-    parameters::{value, Params, ATTACKED, AVAILABLE_MOVES, DEFENDED, PIECE},
+    parameters::Params,
     piece::{Color, Kind, Piece},
 };
 
@@ -47,11 +47,8 @@ impl Board {
 
         board[mov.to] = piece;
         if [0, 7].contains(&mov.to.rank) {
-            match board[mov.to].unwrap() {
-                Piece { kind: Pawn, color } => {
-                    board[mov.to] = Some(Piece { kind: Queen, color });
-                }
-                _ => (),
+            if let Piece { kind: Pawn, color } = board[mov.to].unwrap() {
+                board[mov.to] = Some(Piece { kind: Queen, color });
             }
         }
 
@@ -121,24 +118,21 @@ impl Board {
             })?
     }
 
-    pub fn colored_pieces<'a>(
-        &'a self,
-        color: Color,
-    ) -> impl Iterator<Item = (Piece, Position)> + 'a {
+    pub fn colored_pieces(&self, color: Color) -> impl Iterator<Item = (Piece, Position)> + '_ {
         (0..8)
             .flat_map(|rank| (0..8).map(move |file| (rank, file)))
             .map(Position::from)
             .filter_map(move |pos| (self[pos]?, pos).pipe(Some))
             .filter(move |(piece, _)| piece.color == color)
     }
-    pub fn moves<'a>(&'a self, turn: Color) -> impl Iterator<Item = Play> + 'a {
+    pub fn moves(&self, turn: Color) -> impl Iterator<Item = Play> + '_ {
         self.colored_pieces(turn)
             .map(|(_, pos)| pos)
             .flat_map(|pos| self.plays_for(pos))
     }
 
     #[allow(unreachable_patterns)]
-    pub fn plays_for<'a>(&'a self, pos: Position) -> impl Iterator<Item = Play> + 'a {
+    pub fn plays_for(&self, pos: Position) -> impl Iterator<Item = Play> + '_ {
         use itertools::Either::*;
         self[pos]
             .into_iter()
@@ -188,14 +182,14 @@ impl Board {
     }
     /// # Bishop moves
     /// ready
-    fn bishop_moves<'a>(&'a self, pos: Position, color: Color) -> impl Iterator<Item = Play> + 'a {
+    fn bishop_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Play> + '_ {
         self.walk(pos, color, -1, -1)
             .chain(self.walk(pos, color, -1, 1))
             .chain(self.walk(pos, color, 1, -1))
     }
     /// # Rook
     /// ready
-    fn rook_moves<'a>(&'a self, pos: Position, color: Color) -> impl Iterator<Item = Play> + 'a {
+    fn rook_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Play> + '_ {
         self.walk(pos, color, -1, 0)
             .chain(self.walk(pos, color, 0, -1))
             .chain(self.walk(pos, color, 0, 1))
@@ -206,7 +200,7 @@ impl Board {
     /// * diagonal moves
     /// * vertical and horizontal moves
 
-    fn queen_moves<'a>(&'a self, pos: Position, color: Color) -> impl Iterator<Item = Play> + 'a {
+    fn queen_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Play> + '_ {
         self.bishop_moves(pos, color)
             .chain(self.rook_moves(pos, color))
     }
@@ -251,7 +245,7 @@ impl Board {
             })
     }
 
-    fn knight_moves<'a>(&'_ self, pos: Position, color: Color) -> impl Iterator<Item = Play> {
+    fn knight_moves(&'_ self, pos: Position, color: Color) -> impl Iterator<Item = Play> {
         None.into_iter()
             .chain(self.relative(pos, color, 2, -1))
             .chain(self.relative(pos, color, 2, 1))

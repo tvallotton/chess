@@ -1,6 +1,6 @@
-use std::ops::{BitAnd, BitOr};
+use std::ops::{BitOr};
 
-use smallvec::CollectionAllocErr;
+
 pub use Color::*;
 pub use Kind::*;
 #[derive(Clone, Copy, Debug)]
