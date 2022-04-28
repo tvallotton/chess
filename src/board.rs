@@ -2,8 +2,8 @@ use std::panic::UnwindSafe;
 
 use crate::{
     moves::{Move, Play, Position},
+    parameters::{value, Params, ATTACKED, AVAILABLE_MOVES, DEFENDED, PIECE},
     piece::{Color, Kind, Piece},
-    settings::{value, ATTACKED, AVAILABLE_MOVES, DEFENDED, PIECE},
 };
 
 use tap::prelude::*;
@@ -58,33 +58,30 @@ impl Board {
         board
     }
     #[inline]
-    pub fn heuristic(&self, turn: Color) -> f32 {
-        let mut score = 0.0;
+    pub fn heuristic(&self, turn: Color, params: &Params) -> f32 {
+        let mut score = -params.turn_value;
         for i in 0..8 {
             for j in 0..8 {
                 let pos = (i, j).into();
                 if let Some(piece) = self[pos] {
-                    let mut piece_val = *PIECE * value((piece, pos));
+                    let mut piece_val = params.piece_val((piece, pos));
 
                     self.plays_for(pos)
                         .for_each(|play| {
-                            piece_val += *AVAILABLE_MOVES;
+                            piece_val += params.available_moves;
 
                             match play {
                                 Play::Capture(mov, taken) => {
-                                    piece_val += *ATTACKED * value((taken, mov.to))
-                                        / value((piece, mov.from));
-                                    piece_val += *PIECE * value((piece, mov.to));
-                                    piece_val -= *PIECE * value((piece, mov.from));
+                                    piece_val +=
+                                        params.attacked((taken, mov.to), (piece, mov.from));
+                                    piece_val += params.mov(piece, mov);
                                 }
                                 Play::Defense(mov, def) => {
-                                    piece_val += *DEFENDED * value((piece, mov.from)) / value((def, mov.to));
-                                    piece_val += *PIECE * value((piece, mov.to));
-                                    piece_val -= *PIECE * value((piece, mov.from));
+                                    piece_val += params.defended((def, mov.to), (piece, mov.from));
+                                    piece_val += params.mov(piece, mov);
                                 }
                                 Play::Move(mov) => {
-                                    piece_val += *PIECE * value((piece, mov.to));
-                                    piece_val -= *PIECE * value((piece, mov.from));
+                                    piece_val += params.mov(piece, mov);
                                 }
                                 _ => panic!(),
                             }

@@ -1,5 +1,6 @@
 use std::ops::{BitAnd, BitOr};
 
+use smallvec::CollectionAllocErr;
 pub use Color::*;
 pub use Kind::*;
 #[derive(Clone, Copy, Debug)]
@@ -21,6 +22,12 @@ pub enum Kind {
 pub enum Color {
     Black,
     White,
+}
+
+impl Default for Color {
+    fn default() -> Self {
+        White
+    }
 }
 
 impl BitOr<Kind> for Color {

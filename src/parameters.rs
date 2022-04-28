@@ -1,15 +1,64 @@
 use crate::{
-    moves::Position,
+    moves::{Move, Position},
     piece::{Color, Kind, Piece},
 };
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::ops::Index;
+use std::{ops::Index, str::FromStr};
 use tap::prelude::*;
-
 use Kind::*;
 
+#[derive(Debug, Deserialize)]
+pub struct Params {
+    pub pice_value: f32,
+    pub mov_value: f32,
+    pub max_nodes: usize,
+    pub max_iter: usize,
+    pub defended: f32,
+    pub attacked: f32,
+    pub available_moves: f32,
+    pub turn_value: f32, 
+    pub pawn: ValueTable,
+    pub king: ValueTable,
+    pub queen: ValueTable,
+    pub knight: ValueTable,
+    pub bishop: ValueTable,
+    pub rook: ValueTable,
+}
+
+impl Params {
+    pub fn piece_val(&self, tuple: (Piece, Position)) -> f32 {
+        self.pice_value * self.value(tuple)
+    }
+    pub fn attacked(&self, attacked: (Piece, Position), by: (Piece, Position)) -> f32 {
+        self.attacked * self.value(attacked) / self.value(by)
+    }
+    pub fn defended(&self, defended: (Piece, Position), by: (Piece, Position)) -> f32 {
+        self.defended * self.value(by) / self.value(defended)
+    }
+    pub fn mov(&self, piece: Piece, mov: Move) -> f32 {
+        self.mov_value * self.value((piece, mov.to))
+    }
+    pub fn value(&self, tuple: (Piece, Position)) -> f32 {
+        let index = (tuple.1, tuple.0.color);
+        (match tuple.0.kind {
+            Bishop => &self.bishop,
+            Rook => &self.rook,
+            King => &self.king,
+            Knight => &self.knight,
+            Queen => &self.queen,
+            Pawn => &self.pawn,
+        })[index]
+    }
+}
+
+impl FromStr for Params {
+    type Err = serde_json::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        serde_json::from_str(s)
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ValueTable {

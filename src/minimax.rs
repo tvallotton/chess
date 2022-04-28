@@ -1,16 +1,21 @@
 use arrayvec::ArrayVec;
 
 use crate::moves::{Move, Play};
-use crate::settings::*;
-use crate::settings::{ATTACKED, DEFENDED};
+use crate::parameters::*;
+use crate::parameters::{ATTACKED, DEFENDED};
 use crate::{board::Board, piece::Color};
 
 use std::collections::BinaryHeap;
 
+struct Game {
+    node: MiniMaxNode,
+    opt: crate::opt::Opt,
+}
+
 #[derive(Clone)]
 pub struct MiniMaxNode {
-    history: Option<Move>,
-    turn: Color,
+    pub history: Option<Move>,
+    pub turn: Color,
     pub heuristic: f32,
     pub board: Board,
 }
@@ -19,10 +24,9 @@ impl Ord for MiniMaxNode {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         // SAFETY
         // None is not a possible value
-        unsafe {
-            self.partial_cmp(other)
-                .unwrap_unchecked()
-        }
+
+        self.partial_cmp(other)
+            .unwrap()
     }
 }
 
@@ -66,24 +70,15 @@ impl MiniMaxNode {
         todo!()
     }
 
-    fn new(board: Board, turn: Color, history: Option<Move>) -> Self {
-        // let player_score: f32 = board
-        //     .colored_pieces(turn)
-        //     .map(value)
-        //     .sum();
-        // let opponent_score: f32 = board
-        //     .colored_pieces(turn.opposite())
-        //     .map(value)
-        //     .sum();
+    fn new(board: Board, turn: Color, history: Option<Move>, params: &Params) -> Self {
         MiniMaxNode {
             history,
             turn,
-            heuristic: board.heuristic(turn),
+            heuristic: board.heuristic(turn, params),
             board,
-            // children: Default::default(),
         }
     }
-    fn get_children(&mut self) -> ArrayVec<Self, 256> {
+    pub fn children(&mut self, params: &Params) -> ArrayVec<Self, 256> {
         let plays = self.board.moves(self.turn);
         let mut children = arrayvec::ArrayVec::<_, 256>::new();
         self.board
@@ -107,6 +102,7 @@ impl MiniMaxNode {
                     self.board.apply(r#move),
                     self.turn.opposite(),
                     self.history.or(Some(r#move)),
+                    params,
                 );
                 log::debug!(
                     "CHILD:\n{}\nheuristic {}",
@@ -118,42 +114,42 @@ impl MiniMaxNode {
         children
     }
 
-    pub fn build(self) -> (Move, f32) {
-        let current_turn = self.turn;
-        let mut heap = BinaryHeap::with_capacity(*MAX_NODES);
-        heap.push(self);
-        let mut max = 0;
-        while let Some(mut node) = heap.pop() {
-            log::debug!("POP:\n{}\nheuristic: {}", node.board, node.heuristic);
-            for child in node.get_children() {
-                heap.push(child);
-            }
-            // drop unused nodes
-            if heap.len() > *MAX_NODES {
-                let mut sum = 0.0;
-                let mut count = 0.0;
-                heap.retain(|node| {
-                    sum += node.heuristic;
-                    count += 1.0;
-                    node.heuristic >= sum / count
-                });
-            }
-            max += 1;
-            if max >= *MAX_ITER && node.turn == current_turn {
-                return (node.history.unwrap(), node.heuristic);
-            }
-        }
-        panic!("no moves available");
-    }
+    // pub fn build(self) -> (Move, f32) {
+    //     let current_turn = self.turn;
+    //     let mut heap = BinaryHeap::with_capacity(*MAX_NODES);
+    //     heap.push(self);
+    //     let mut max = 0;
+    //     while let Some(mut node) = heap.pop() {
+    //         log::debug!("POP:\n{}\nheuristic: {}", node.board, node.heuristic);
+    //         for child in node.get_children() {
+    //             heap.push(child);
+    //         }
+    //         // drop unused nodes
+    //         if heap.len() > *MAX_NODES {
+    //             let mut sum = 0.0;
+    //             let mut count = 0.0;
+    //             heap.retain(|node| {
+    //                 sum += node.heuristic;
+    //                 count += 1.0;
+    //                 node.heuristic >= sum / count
+    //             });
+    //         }
+    //         max += 1;
+    //         if max >= *MAX_ITER && node.turn == current_turn {
+    //             return (node.history.unwrap(), node.heuristic);
+    //         }
+    //     }
+    //     panic!("no moves available");
+    // }
 
-    pub fn play(&mut self) {
-        log::info!("playing for: {:?}", self.turn);
-        let node = self.clone();
-        let mov = node.build();
-        self.turn = self.turn.opposite();
-        self.board = self.board.apply(mov.0);
-        self.heuristic = mov.1;
-    }
+    // pub fn play(&mut self) {
+    //     log::info!("playing for: {:?}", self.turn);
+    //     let node = self.clone();
+    //     let mov = node.build();
+    //     self.turn = self.turn.opposite();
+    //     self.board = self.board.apply(mov.0);
+    //     self.heuristic = mov.1;
+    // }
 }
 
 fn heuristic(defended_value: f32, attacked_value: f32, count: i32) -> f32 {
