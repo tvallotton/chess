@@ -1,7 +1,7 @@
 use crate::piece::Piece;
 
 /// A move represents the change of position of a piece.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Move {
     pub to: Position,
     pub from: Position,

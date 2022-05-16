@@ -2,17 +2,11 @@ use arrayvec::ArrayVec;
 
 use crate::moves::{Move, Play};
 use crate::parameters::*;
-use crate::parameters::{ATTACKED, DEFENDED};
 use crate::{board::Board, piece::Color};
-
-struct Game {
-    node: MiniMaxNode,
-    opt: crate::opt::Opt,
-}
 
 #[derive(Clone)]
 pub struct MiniMaxNode {
-    pub history: Option<Move>,
+    pub history: Vec<Move>,
     pub turn: Color,
     pub heuristic: f32,
     pub board: Board,
@@ -54,7 +48,7 @@ impl Eq for MiniMaxNode {}
 impl Default for MiniMaxNode {
     fn default() -> Self {
         MiniMaxNode {
-            history: None,
+            history: vec![],
             turn: Color::White,
             heuristic: 0.0,
             board: Board::default(),
@@ -68,7 +62,7 @@ impl MiniMaxNode {
         todo!()
     }
 
-    fn new(board: Board, turn: Color, history: Option<Move>, params: &Params) -> Self {
+    fn new(board: Board, turn: Color, history: Vec<Move>, params: &Params) -> Self {
         MiniMaxNode {
             history,
             turn,
@@ -93,10 +87,12 @@ impl MiniMaxNode {
                     Play::Move(move_) => move_,
                     _ => panic!("castle not implemented"),
                 };
+                let mut history = self.history.clone();
+                history.push(r#move);
                 let child_node = Self::new(
                     self.board.apply(r#move),
                     self.turn.opposite(),
-                    self.history.or(Some(r#move)),
+                    history,
                     params,
                 );
                 log::debug!(
@@ -145,8 +141,4 @@ impl MiniMaxNode {
     //     self.board = self.board.apply(mov.0);
     //     self.heuristic = mov.1;
     // }
-}
-
-fn heuristic(defended_value: f32, attacked_value: f32, count: i32) -> f32 {
-    *DEFENDED * defended_value + *ATTACKED * attacked_value + *AVAILABLE_MOVES * count as f32
 }

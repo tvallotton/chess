@@ -2,50 +2,30 @@
 #![doc = include_str!("../readme.md")]
 #![allow(dead_code)]
 
-
-
-
-use structopt::StructOpt;
+use game::Game;
 
 
 mod board;
+mod game;
 mod minimax;
 mod moves;
 mod opt;
+mod parameters;
 mod piece;
 mod queue;
-mod parameters;
 mod start_board;
-mod game; 
 
 fn main() {
     pretty_env_logger::init();
-    let _opt = opt::Opt::from_args(); 
+    let mut game = Game::new();
+    for _i in 0..50 {
+        println!("{}", game);
+        if !game.play() {
+            break;
+        }
+    }
 
-    
-    // return; 
-    // use board::Castle;
-    // use piece::Color::*;
-    // use piece::Kind::*;
-    // use piece::Piece;
-    // let mut node = minimax::MiniMaxNode::default();
-    
-    // for _ in 0..10 {
-    //     println!("{}", node.board);
-    //     let h = node
-    //         .board
-    //         .heuristic(Color::White, );
-    //     println!("board heuristic: {h}");
-    //     println!("node heuristic: {}", node.heuristic);
-    //     // println!("{:?}", node.board);
-    //     node.play();
-    // }
+    game.winner();
 }
 
-
-
-fn play_game() {
-
-    
-
-}
+fn play_game() {}
