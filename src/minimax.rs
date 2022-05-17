@@ -29,6 +29,7 @@ impl Node {
 
     pub fn children(&self, params: &Params) -> Vec<Self> {
         let Self { turn, board, .. } = self;
+        
         board
             .playable_moves(self.turn)
             .map(|mov| {

@@ -69,7 +69,7 @@ impl Board {
 
                     self.plays_for(pos)
                         .for_each(|play| {
-                            // we want more moves, but we don't want to use the queen too early
+                            // we want more available moves, but we don't want to use the queen too early
                             piece_val +=
                                 params.available_moves / (1.0 + params.value((piece, pos)));
 

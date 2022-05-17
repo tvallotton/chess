@@ -30,7 +30,7 @@ impl Params {
         self.piece_value * self.value(tuple)
     }
     pub fn attacked(&self, attacked: Piece, by: Piece, mov: Move) -> f32 {
-        self.attacked * self.value((attacked, mov.to)) / self.value((by, mov.from))
+        self.attacked * self.value((attacked, mov.to)) / (1.0 + self.value((by, mov.from)))
     }
 
     pub fn defended(&self, defended: (Piece, Position), by: (Piece, Position)) -> f32 {
