@@ -1,4 +1,6 @@
+use crate::game::Game;
 use crate::moves::{Move, Play};
+use crate::opt::{Opt, Settings};
 use crate::parameters::*;
 use crate::{board::Board, piece::Color};
 use arrayvec::ArrayVec;
@@ -12,8 +14,8 @@ use Color::*;
 
 #[derive(Clone)]
 pub struct Node {
-    pub heuristic: f32,
     pub history: Option<Move>,
+    pub heuristic: f32,
     pub turn: Color,
     pub board: Board,
     pub children: RefCell<Vec<Node>>,
@@ -29,7 +31,7 @@ impl Node {
 
     pub fn children(&self, params: &Params) -> Vec<Self> {
         let Self { turn, board, .. } = self;
-        
+
         board
             .playable_moves(self.turn)
             .map(|mov| {
@@ -52,34 +54,46 @@ impl Node {
             .collect()
     }
 
-    pub fn get_move(&self, turn: Color) -> Option<(Move, f32)> {
-        let (mut black, mut white) = (f32::INFINITY, f32::NEG_INFINITY);
-        let children = self.children.borrow();
-        let moves = children
-            .iter()
-            .map(|child| (child, child.minimax(turn, &mut black, &mut white)));
+    // pub fn get_move(&self, turn: Color, params: &Params) -> Option<(Move, f32)> {
+    //     let (mut black, mut white) = (f32::INFINITY, f32::NEG_INFINITY);
+    //     let children = self.children.borrow();
+    //     let moves = children
+    //         .iter()
+    //         .map(|child| (child, child.minimax(settings, turn, &mut black, &mut white)));
 
-        if turn == Color::White {
-            let (node, h) = moves.max_by(|x, y| x.1.partial_cmp(&y.1).unwrap())?;
+    //     if turn == Color::White {
+    //         let (node, h) = moves.max_by(|x, y| x.1.partial_cmp(&y.1).unwrap())?;
 
-            Some((node.history?, h))
-        } else {
-            let (node, h) = moves.min_by(|x, y| x.1.partial_cmp(&y.1).unwrap())?;
-            Some((node.history?, h))
-        }
+    //         Some((node.history?, h))
+    //     } else {
+    //         let (node, h) = moves.min_by(|x, y| x.1.partial_cmp(&y.1).unwrap())?;
+    //         Some((node.history?, h))
+    //     }
+    // }
+    fn heuristic(&self, turn: Color, params: &Params) -> f32 {
+        self.board
+            .heuristic(turn, params)
     }
 
-    pub fn minimax(&self, turn: Color, black: &mut f32, white: &mut f32) -> f32 {
-        let children = self.children.borrow();
-        if children.is_empty() {
-            return self.heuristic;
+    pub fn minimax(
+        &self,
+        settings: &Settings,
+        depth: i32,
+        turn: Color,
+        black: &mut f32,
+        white: &mut f32,
+    ) -> f32 {
+        let params = settings.params(turn);
+        let children = self.children(settings.params(turn));
+        if depth == 0 || children.is_empty() {
+            return self.heuristic(turn, params);
         }
         if let Color::White = turn {
             let mut max = f32::NEG_INFINITY;
             for child in &*children {
-                let value = child.minimax(turn.opposite(), black, white);
+                let value = child.minimax(settings, turn.opposite(), black, white);
                 max = max.max(value);
-                *white = white.max(self.heuristic);
+                *white = white.max(value);
                 if black < white {
                     break;
                 }
@@ -88,7 +102,7 @@ impl Node {
         } else {
             let mut min = f32::INFINITY;
             for child in &*children {
-                let value = child.minimax(turn.opposite(), black, white);
+                let value = child.minimax(settings, turn.opposite(), black, white);
                 min = min.min(value);
                 *black = black.min(self.heuristic);
                 if white < black {
@@ -100,61 +114,12 @@ impl Node {
     }
 }
 
-impl Ord for Node {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other)
-            .unwrap()
-    }
-}
-
-// // if me and me {
-// //     pick my highest chance
-// // }
-// // if me and opponent {
-// //     pick my hightest chance
-// // }
-// // if opponent and opponent {
-// //     pick my lowest chance
-// // }
-impl PartialOrd for Node {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        // let h1 = self
-        //     .turn
-        //     .opposite()
-        //     .pawn_dir() as f32
-        //     * self.heuristic;
-        // let h2 = other
-        //     .turn
-        //     .opposite()
-        //     .pawn_dir() as f32
-        //     * other.heuristic;
-        // h1.partial_cmp(&h2)
-
-        match (self.turn, other.turn) {
-            (White, White) => self
-                .heuristic
-                .partial_cmp(&other.heuristic),
-            (White, Black) => self
-                .heuristic
-                .partial_cmp(&-other.heuristic),
-            (Black, White) => (-self.heuristic).partial_cmp(&other.heuristic),
-            (Black, Black) => (-self.heuristic).partial_cmp(&-other.heuristic),
-        }
-    }
-}
-
-impl PartialEq for Node {
-    fn eq(&self, other: &Self) -> bool {
-        self.heuristic == other.heuristic
-    }
-}
-impl Eq for Node {}
 impl Default for Node {
     fn default() -> Self {
         Self {
+            heuristic: 0.0,
             history: None,
             turn: White,
-            heuristic: 0.0,
             board: Board::default(),
             children: Default::default(),
         }

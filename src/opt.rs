@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::parameters::Params;
+use crate::{parameters::Params, piece::Color};
 
 use serde::Deserialize;
 use structopt::StructOpt;
@@ -23,7 +23,7 @@ pub struct Settings {
     // #[structopt(long)]
     pub memory_limit: usize,
 
-    pub max_iter: i32, 
+    pub max_iter: i32,
     pub white_params: Params,
 
     pub black_params: Params,
@@ -37,5 +37,14 @@ impl FromStr for Settings {
     type Err = serde_json::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         serde_json::from_str(s)
+    }
+}
+
+impl Settings {
+    pub fn params(&self, color: Color) -> &Params {
+        match color {
+            Color::White => &self.white_params,
+            Color::Black => &self.black_params,
+        }
     }
 }
