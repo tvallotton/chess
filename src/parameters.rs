@@ -9,7 +9,7 @@ use std::{ops::Index, str::FromStr};
 
 use Kind::*;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Params {
     pub piece_value: f32,
     pub mov_value: f32,
@@ -29,11 +29,12 @@ impl Params {
     pub fn piece_val(&self, tuple: (Piece, Position)) -> f32 {
         self.piece_value * self.value(tuple)
     }
-    pub fn attacked(&self, attacked: (Piece, Position), by: (Piece, Position)) -> f32 {
-        self.attacked * self.value(attacked) / self.value(by)
+    pub fn attacked(&self, attacked: Piece, by: Piece, mov: Move) -> f32 {
+        self.attacked * self.value((attacked, mov.to)) / self.value((by, mov.from))
     }
+
     pub fn defended(&self, defended: (Piece, Position), by: (Piece, Position)) -> f32 {
-        self.defended * self.value(by) / self.value(defended)
+        self.defended * 1.0 / (1.0 + self.value(by) * self.value(defended).powi(2))
     }
     pub fn mov(&self, piece: Piece, mov: Move) -> f32 {
         self.mov_value * self.value((piece, mov.to))
@@ -58,7 +59,7 @@ impl FromStr for Params {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ValueTable {
     white: [[f32; 8]; 8],
     black: [[f32; 8]; 8],
@@ -74,90 +75,3 @@ impl Index<(Position, Color)> for ValueTable {
         }
     }
 }
-// fn setting<T: Des>(key: &str) -> {
-
-// }
-
-// static SETTINGS: Lazy<Value> = Lazy::new(|| {
-//     let settings = crate::opt::options().settings_path;
-//     let json = std::fs::read_to_string(settings).unwrap();
-//     serde_json::from_str(&json).unwrap()
-// });
-
-// pub static PIECE: Lazy<f32> = Lazy::new(|| {
-//     SETTINGS["piece_value"]
-//         .clone()
-//         .pipe(serde_json::from_value)
-//         .unwrap()
-// });
-
-// pub static MAX_NODES: Lazy<usize> = Lazy::new(|| {
-//     SETTINGS["max_nodes"]
-//         .clone()
-//         .pipe(serde_json::from_value)
-//         .unwrap()
-// });
-
-// pub static MAX_ITER: Lazy<usize> = Lazy::new(|| {
-//     SETTINGS["max_iter"]
-//         .clone()
-//         .pipe(serde_json::from_value)
-//         .unwrap()
-// });
-// pub static DEFENDED: Lazy<f32> = Lazy::new(|| {
-//     SETTINGS["defended_value"]
-//         .clone()
-//         .pipe(serde_json::from_value)
-//         .unwrap()
-// });
-
-// pub static ATTACKED: Lazy<f32> = Lazy::new(|| {
-//     SETTINGS["attacked_value"]
-//         .clone()
-//         .pipe(serde_json::from_value)
-//         .unwrap()
-// });
-
-// pub static AVAILABLE_MOVES: Lazy<f32> = Lazy::new(|| {
-//     SETTINGS["available_moves"]
-//         .clone()
-//         .pipe(serde_json::from_value)
-//         .unwrap()
-// });
-
-// pub static PAWN: Lazy<ValueTable> = Lazy::new(|| {
-//     SETTINGS["pawn"]
-//         .clone()
-//         .pipe(serde_json::from_value)
-//         .unwrap()
-// });
-// pub static KING: Lazy<ValueTable> = Lazy::new(|| {
-//     SETTINGS["king"]
-//         .clone()
-//         .pipe(serde_json::from_value)
-//         .unwrap()
-// });
-// pub static QUEEN: Lazy<ValueTable> = Lazy::new(|| {
-//     SETTINGS["queen"]
-//         .clone()
-//         .pipe(serde_json::from_value)
-//         .unwrap()
-// });
-// pub static BISHOP: Lazy<ValueTable> = Lazy::new(|| {
-//     SETTINGS["bishop"]
-//         .clone()
-//         .pipe(serde_json::from_value)
-//         .unwrap()
-// });
-// pub static KNIGHT: Lazy<ValueTable> = Lazy::new(|| {
-//     SETTINGS["knight"]
-//         .clone()
-//         .pipe(serde_json::from_value)
-//         .unwrap()
-// });
-// pub static ROOK: Lazy<ValueTable> = Lazy::new(|| {
-//     SETTINGS["rook"]
-//         .clone()
-//         .pipe(serde_json::from_value)
-//         .unwrap()
-// });

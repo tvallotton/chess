@@ -10,7 +10,7 @@ pub struct Opt {
     pub settings: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Settings {
     // #[structopt(short = "r", long, default_value = "256")]
     pub recursion_limit: u64,
@@ -23,6 +23,7 @@ pub struct Settings {
     // #[structopt(long)]
     pub memory_limit: usize,
 
+    pub max_iter: i32, 
     pub white_params: Params,
 
     pub black_params: Params,

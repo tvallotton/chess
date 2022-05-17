@@ -17,8 +17,10 @@ mod start_board;
 
 fn main() {
     pretty_env_logger::init();
+    print!("asd\n"); 
     let mut game = Game::new();
-    for _i in 0..50 {
+    print!("asd\n"); 
+    for _i in 0..20 {
         println!("{}", game);
         if !game.play() {
             break;

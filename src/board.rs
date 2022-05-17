@@ -54,23 +54,28 @@ impl Board {
 
         board
     }
+
+    /// Positive numbers mean that white is winning. Negative numbers means that black is winning.
     #[inline]
     pub fn heuristic(&self, turn: Color, params: &Params) -> f32 {
-        let mut score = -params.turn_value;
+        let mut score = params.turn_value;
+
         for i in 0..8 {
             for j in 0..8 {
                 let pos = (i, j).into();
+
                 if let Some(piece) = self[pos] {
                     let mut piece_val = params.piece_val((piece, pos));
 
                     self.plays_for(pos)
                         .for_each(|play| {
-                            piece_val += params.available_moves;
+                            // we want more moves, but we don't want to use the queen too early
+                            piece_val +=
+                                params.available_moves / (1.0 + params.value((piece, pos)));
 
                             match play {
                                 Play::Capture(mov, taken) => {
-                                    piece_val +=
-                                        params.attacked((taken, mov.to), (piece, mov.from));
+                                    piece_val += params.attacked(taken, piece, mov);
                                     piece_val += params.mov(piece, mov);
                                 }
                                 Play::Defense(mov, def) => {
@@ -83,14 +88,18 @@ impl Board {
                                 _ => panic!(),
                             }
                         });
-                    if piece.color == turn {
+                    let Piece { kind, color } = piece;
+                    if piece.color == Color::White {
+                        log::debug!("{color:?} {kind:?}: {piece_val}");
                         score += piece_val;
                     } else {
+                        log::debug!("{color:?} {kind:?}: {piece_val}");
                         score -= piece_val;
                     }
                 }
             }
         }
+        log::debug!("total: {score}"); 
         score
     }
 
@@ -129,6 +138,16 @@ impl Board {
         self.colored_pieces(turn)
             .map(|(_, pos)| pos)
             .flat_map(|pos| self.plays_for(pos))
+    }
+
+    pub fn playable_moves(&self, turn: Color) -> impl Iterator<Item = Move> + '_ {
+        self.moves(turn)
+            .filter_map(|play| match play {
+                Play::Capture(mov, _) => Some(mov),
+                Play::Defense(_, _) => None,
+                Play::Move(mov) => Some(mov),
+                _ => todo!(),
+            })
     }
 
     #[allow(unreachable_patterns)]
