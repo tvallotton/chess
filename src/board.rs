@@ -1,12 +1,13 @@
-use std::panic::UnwindSafe;
-
 use crate::{
     moves::{Move, Play, Position},
     parameters::Params,
     piece::{Color, Kind, Piece},
 };
+use std::panic::UnwindSafe;
+use Color::*;
 
 use tap::prelude::*;
+use unicode_segmentation::UnicodeSegmentation;
 use Kind::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -57,7 +58,7 @@ impl Board {
 
     /// Positive numbers mean that white is winning. Negative numbers means that black is winning.
     #[inline]
-    pub fn heuristic(&self, turn: Color, params: &Params) -> f32 {
+    pub fn heuristic(&self, params: &Params, log: bool) -> f32 {
         let mut score = params.turn_value;
 
         for i in 0..8 {
@@ -90,32 +91,41 @@ impl Board {
                         });
                     let Piece { kind, color } = piece;
                     if piece.color == Color::White {
-                        log::debug!("{color:?} {kind:?}: {piece_val}");
+                        if log {
+                            log::debug!("{color:?} {kind:?}: {piece_val}");
+                        }
                         score += piece_val;
                     } else {
-                        log::debug!("{color:?} {kind:?}: {piece_val}");
+                        if log {
+                            log::debug!("{color:?} {kind:?}: {piece_val}");
+                        }
                         score -= piece_val;
                     }
                 }
             }
         }
-        log::debug!("total: {score}"); 
+
         score
     }
+    // pub fn parse(mut input: &str) {
+    //     let empty = Board::empty();
 
-    // pub fn apply(&mut self, play: Play) -> Option<f32> {
-    //     match play {
-    //         Play::Capture(move_, piece) => {
-    //             let taken_value = value((piece, move_.to));
-    //             Some(taken_value)
-    //         }
-    //         Play::Move(move_) => {
-    //             let piece = self[move_.from].take();
-    //             self[move_.to] = piece;
-    //             Some(0.0)
-    //         }
-    //         Play::Defense(_, _) => return None,
-    //         _ => panic!(),
+    //     if let Some(stripped) = input.strip_prefix(" ║ ") {
+    //         input = stripped;
+    //         let piece = input.graphemes(true).next();
+    //         empty[(0, 0)] = Some(match piece {
+    //             Some("♜") => Black | Rook,
+    //             Some("♟") => Black | Pawn,
+    //             Some("♚") => Black | Rook,
+    //             Some("♝") => Black | Bishop,
+    //             Some("♞") => Black | Knight,
+    //             Some("♙") => White | Pawn,
+    //             Some("♔") => White | King,
+    //             Some("♗") => White | Bishop,
+    //             Some("♖") => White | Rook,
+    //             Some("♘") => White | Knight, 
+    //             _ => return,
+    //         });
     //     }
     // }
     pub fn get(&self, pos: Position) -> Option<Option<Piece>> {

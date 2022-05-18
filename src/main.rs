@@ -25,6 +25,7 @@ fn main() {
         if !game.play() {
             break;
         }
+        std::thread::sleep(std::time::Duration::from_millis(100)); 
     }
 
     game.winner();

@@ -64,6 +64,7 @@ dependencies = [
  "smallvec",
  "structopt",
  "tap",
+ "unicode-segmentation",
 ]
 
 [[package]]

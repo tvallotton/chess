@@ -23,7 +23,7 @@ pub struct Settings {
     // #[structopt(long)]
     pub memory_limit: usize,
 
-    pub max_iter: i32,
+    pub max_depth: i32,
     pub white_params: Params,
 
     pub black_params: Params,

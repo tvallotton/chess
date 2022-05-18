@@ -40,7 +40,33 @@ impl Node {
                     history: self.history.or(Some(mov)),
                     board: new_board,
                     children: RefCell::default(),
-                    heuristic: new_board.heuristic(*turn, params),
+                    heuristic: new_board.heuristic(params, false),
+                    turn: turn.opposite(),
+                };
+
+                // log::debug!(
+                //     "CHILD:\n{}\nheuristic {}",
+                //     child_node.board,
+                //     child_node.heuristic
+                // );
+                child_node
+            })
+            .collect()
+    }
+    pub fn children_with_moves<'a>(
+        &'a self,
+        params: &'a Params,
+    ) -> impl Iterator<Item = (Self, Move)> + 'a {
+        let Self { turn, board, .. } = self;
+        board
+            .playable_moves(self.turn)
+            .map(|mov| {
+                let new_board = board.apply(mov);
+                let child_node = Self {
+                    history: self.history.or(Some(mov)),
+                    board: new_board,
+                    children: RefCell::default(),
+                    heuristic: new_board.heuristic(params, false),
                     turn: turn.opposite(),
                 };
 
@@ -49,9 +75,8 @@ impl Node {
                     child_node.board,
                     child_node.heuristic
                 );
-                child_node
+                (child_node, mov)
             })
-            .collect()
     }
 
     // pub fn get_move(&self, turn: Color, params: &Params) -> Option<(Move, f32)> {
@@ -70,31 +95,31 @@ impl Node {
     //         Some((node.history?, h))
     //     }
     // }
-    fn heuristic(&self, turn: Color, params: &Params) -> f32 {
+    fn heuristic(&self, params: &Params) -> f32 {
         self.board
-            .heuristic(turn, params)
+            .heuristic(params, false)
     }
 
     pub fn minimax(
         &self,
-        settings: &Settings,
+        params: &Params,
         depth: i32,
         turn: Color,
         black: &mut f32,
         white: &mut f32,
     ) -> f32 {
-        let params = settings.params(turn);
-        let children = self.children(settings.params(turn));
+        
+        let children = self.children(params);
         if depth == 0 || children.is_empty() {
-            return self.heuristic(turn, params);
+            return self.heuristic(params);
         }
         if let Color::White = turn {
             let mut max = f32::NEG_INFINITY;
             for child in &*children {
-                let value = child.minimax(settings, turn.opposite(), black, white);
+                let value = child.minimax(params, depth - 1, turn.opposite(), black, white);
                 max = max.max(value);
                 *white = white.max(value);
-                if black < white {
+                if black <= white {
                     break;
                 }
             }
@@ -102,10 +127,10 @@ impl Node {
         } else {
             let mut min = f32::INFINITY;
             for child in &*children {
-                let value = child.minimax(settings, turn.opposite(), black, white);
+                let value = child.minimax(params, depth - 1, turn.opposite(), black, white);
                 min = min.min(value);
-                *black = black.min(self.heuristic);
-                if white < black {
+                *black = black.min(value);
+                if black <= white {
                     break;
                 }
             }

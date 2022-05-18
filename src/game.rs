@@ -58,7 +58,7 @@ impl Game {
     }
     pub fn play(&mut self) -> bool {
         log::info!("playing for: {:?}", self.node.turn);
-        if let Some((mov, val)) = self.clone().a_star() {
+        if let Some((mov, val)) = self.clone().minimax() {
             log::info!("move heuristic: {val}");
             self.node.board = self.node.board.apply(mov);
 
@@ -70,8 +70,27 @@ impl Game {
     }
 
     fn minimax(&mut self) -> Option<(Move, f32)> {
-       self.node.minimax(); 
-       None
+        let (mut black, mut white) = (0.0, 0.0);
+        let moves = self
+            .node
+            .children_with_moves(self.params())
+            .map(|(node, mov)| {
+                let minimax = node.minimax(
+                    &self.params(),
+                    self.opt.max_depth,
+                    self.turn,
+                    &mut black,
+                    &mut white,
+                );
+
+                log::debug!("CHILD: {}\nminimax: {minimax}", node.board);
+                (mov, minimax)
+            });
+        if self.turn == Color::White {
+            moves.max_by(|x, y| x.1.partial_cmp(&y.1).unwrap())
+        } else {
+            moves.min_by(|x, y| x.1.partial_cmp(&y.1).unwrap())
+        }
     }
 
     pub fn winner(&self) {
@@ -87,16 +106,16 @@ impl Game {
     fn white_heuristic(&self) -> f32 {
         self.node
             .board
-            .heuristic(Color::White, &self.opt.white_params)
+            .heuristic(&self.opt.white_params, false)
     }
     fn black_heuristic(&self) -> f32 {
         self.node
             .board
-            .heuristic(Color::Black, &self.opt.black_params)
+            .heuristic(&self.opt.black_params, false)
     }
     fn absolute_heuristic(&self) -> f32 {
         self.node
             .board
-            .heuristic(Color::White, &self.opt.absolute_params)
+            .heuristic(&self.opt.absolute_params, true)
     }
 }
