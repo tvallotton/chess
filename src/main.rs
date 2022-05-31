@@ -4,7 +4,6 @@
 
 use game::Game;
 
-
 mod board;
 mod game;
 mod minimax;
@@ -16,21 +15,22 @@ mod queue;
 mod start_board;
 
 fn main() {
+    #[cfg(wasm_logger)]
+    wasm_logger::init(Default::default());
+    // #[cfg(pretty_env_logger)]
     pretty_env_logger::init();
-    
+
     let mut game = Game::new();
-    
+
     for _i in 0..50 {
-        println!("{game}"); 
+        println!("{game}");
         if !game.play() {
             break;
         }
-        std::thread::sleep(std::time::Duration::from_millis(100)); 
+        std::thread::sleep(std::time::Duration::from_millis(100));
     }
 
     game.winner();
 }
 
 fn play_game() {}
-
-

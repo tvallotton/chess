@@ -1,13 +1,9 @@
-
-use crate::moves::{Move};
+use crate::moves::Move;
 
 use crate::parameters::*;
 use crate::{board::Board, piece::Color};
 
-use std::cell::{RefCell};
-
-use std::cmp::{Ord};
-
+use std::cell::RefCell;
 
 use Color::*;
 
@@ -35,7 +31,6 @@ impl Node {
             .playable_moves(self.turn)
             .map(|mov| {
                 let new_board = board.apply(mov);
-                
 
                 // log::debug!(
                 //     "CHILD:\n{}\nheuristic {}",
@@ -107,7 +102,6 @@ impl Node {
         black: &mut f32,
         white: &mut f32,
     ) -> f32 {
-        
         let children = self.children(params);
         if depth == 0 || children.is_empty() {
             return self.heuristic(params);
