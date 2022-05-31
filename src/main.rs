@@ -5,7 +5,12 @@
 use game::Game;
 
 mod board;
+mod cli;
+#[cfg(structopt)]
+mod cli;
 mod game;
+#[cfg(yew)]
+mod gui;
 mod minimax;
 mod moves;
 mod opt;
@@ -14,23 +19,18 @@ mod piece;
 mod queue;
 mod start_board;
 
+#[cfg(target_family = "wasm")]
+fn wasm() {}
+
 fn main() {
-    #[cfg(wasm_logger)]
-    wasm_logger::init(Default::default());
-    // #[cfg(pretty_env_logger)]
-    pretty_env_logger::init();
-
-    let mut game = Game::new();
-
-    for _i in 0..50 {
-        println!("{game}");
-        if !game.play() {
-            break;
-        }
-        std::thread::sleep(std::time::Duration::from_millis(100));
+    #[cfg(wasm)]
+    {
+        wasm_logger::init(Default::default());
+        gui::main();
     }
-
-    game.winner();
+    #[cfg(not(wasm))]
+    {
+        pretty_env_logger::init();
+        cli::main();
+    }
 }
-
-fn play_game() {}

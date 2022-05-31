@@ -13,12 +13,14 @@ rand = "0.8.5"
 serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
 smallvec = { version = "1.8.0", features = ["const_generics"] }
-structopt = "0.3.26"
 tap = "1.0.1"
 unicode-segmentation = "1.9.0"
 
+# CLI
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 pretty_env_logger = "0.4.0"
+structopt = "0.3.26"
 
+# WASM
 [target.'cfg(target_family = "wasm")'.dependencies]
 wasm-logger = "0.2.0"
