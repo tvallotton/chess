@@ -3,7 +3,6 @@ use crate::moves::{Move, Play};
 use crate::opt::{Opt, Settings};
 use crate::parameters::*;
 use crate::{board::Board, piece::Color};
-use arrayvec::ArrayVec;
 use itertools::Itertools;
 use std::cell::{Ref, RefCell};
 use std::cmp::PartialOrd;
