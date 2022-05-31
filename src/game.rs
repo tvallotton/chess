@@ -6,12 +6,12 @@ use crate::parameters::Params;
 use crate::piece::Color;
 
 use serde_json::{from_str, from_value};
-use std::borrow::Borrow;
-use std::cell::Ref;
-use std::collections::{BinaryHeap, HashMap};
+
+
+
 use std::fmt::Display;
 use std::fs::read_to_string;
-use std::time::Instant;
+
 use structopt::StructOpt;
 use tap::Pipe;
 #[derive(Clone)]
@@ -76,7 +76,7 @@ impl Game {
             .children_with_moves(self.params())
             .map(|(node, mov)| {
                 let minimax = node.minimax(
-                    &self.params(),
+                    self.params(),
                     self.opt.max_depth,
                     self.turn,
                     &mut black,

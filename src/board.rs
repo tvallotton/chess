@@ -4,10 +4,10 @@ use crate::{
     piece::{Color, Kind, Piece},
 };
 use std::panic::UnwindSafe;
-use Color::*;
+
 
 use tap::prelude::*;
-use unicode_segmentation::UnicodeSegmentation;
+
 use Kind::*;
 
 #[derive(Debug, Clone, Copy)]

@@ -1,14 +1,14 @@
-use crate::game::Game;
-use crate::moves::{Move, Play};
-use crate::opt::{Opt, Settings};
+
+use crate::moves::{Move};
+
 use crate::parameters::*;
 use crate::{board::Board, piece::Color};
-use itertools::Itertools;
-use std::cell::{Ref, RefCell};
-use std::cmp::PartialOrd;
-use std::cmp::{Ord, PartialEq};
 
-use structopt::clap::Shell;
+use std::cell::{RefCell};
+
+use std::cmp::{Ord};
+
+
 use Color::*;
 
 #[derive(Clone)]
@@ -35,20 +35,20 @@ impl Node {
             .playable_moves(self.turn)
             .map(|mov| {
                 let new_board = board.apply(mov);
-                let child_node = Self {
-                    history: self.history.or(Some(mov)),
-                    board: new_board,
-                    children: RefCell::default(),
-                    heuristic: new_board.heuristic(params, false),
-                    turn: turn.opposite(),
-                };
+                
 
                 // log::debug!(
                 //     "CHILD:\n{}\nheuristic {}",
                 //     child_node.board,
                 //     child_node.heuristic
                 // );
-                child_node
+                Self {
+                    history: self.history.or(Some(mov)),
+                    board: new_board,
+                    children: RefCell::default(),
+                    heuristic: new_board.heuristic(params, false),
+                    turn: turn.opposite(),
+                }
             })
             .collect()
     }
