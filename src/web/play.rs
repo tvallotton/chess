@@ -1,5 +1,5 @@
 use super::Board as BoardComponent;
-use crate::board::{self, Board};
+use crate::board::{Board};
 use yew::prelude::{function_component as component, *};
 
 #[component(Play)]

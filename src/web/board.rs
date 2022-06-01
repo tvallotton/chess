@@ -1,8 +1,8 @@
-use std::fmt::Debug;
+
 
 use super::square::Square;
 use crate::board::Board as BoardProps;
-use smart_default::SmartDefault;
+
 use yew::prelude::{function_component as component, *};
 
 #[derive(Clone, Properties, PartialEq, Default)]
@@ -59,5 +59,5 @@ pub fn board(
             </>
         )
     }
-    return total;
+    total
 }

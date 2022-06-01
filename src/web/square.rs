@@ -1,8 +1,8 @@
-use super::board::color;
-use crate::moves::Position;
-use crate::piece::Color;
-use std::fmt::format;
-use yew::prelude::{function_component as component, Component, *};
+
+
+
+
+use yew::prelude::{function_component as component, *};
 
 use crate::piece::Piece;
 

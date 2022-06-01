@@ -32,7 +32,7 @@ impl Game {
             turn: Color::White,
             node: Node::default(),
             opt: include_str!("../settings.json")
-                .pipe(|x| from_str(x))
+                .pipe(from_str)
                 .unwrap(),
         }
     }

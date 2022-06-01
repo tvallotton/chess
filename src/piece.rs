@@ -1,4 +1,4 @@
-use std::{fmt::Display, ops::BitOr};
+use std::{ops::BitOr};
 
 pub use Color::*;
 pub use Kind::*;
