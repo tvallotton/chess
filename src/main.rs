@@ -1,16 +1,13 @@
 #![feature(binary_heap_retain)]
 #![doc = include_str!("../readme.md")]
 #![allow(dead_code)]
-
+#![warn(unused_crate_dependencies)]
 use game::Game;
 
 mod board;
 mod cli;
-#[cfg(structopt)]
-mod cli;
 mod game;
-#[cfg(yew)]
-mod gui;
+mod web; 
 mod minimax;
 mod moves;
 mod opt;
@@ -19,18 +16,13 @@ mod piece;
 mod queue;
 mod start_board;
 
-#[cfg(target_family = "wasm")]
-fn wasm() {}
-
 fn main() {
-    #[cfg(wasm)]
-    {
-        wasm_logger::init(Default::default());
-        gui::main();
-    }
-    #[cfg(not(wasm))]
-    {
-        pretty_env_logger::init();
-        cli::main();
-    }
+    // #[cfg(any(wasm_logger))]
+    wasm_logger::init(Default::default());
+    // #[cfg(any(web))]
+    web::main();
+    #[cfg(pretty_env_logger)]
+    pretty_env_logger::init();
+    #[cfg(cli)]
+    cli::main();
 }

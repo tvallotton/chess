@@ -1,0 +1,16 @@
+.square {
+    height: 50px;
+    width: 50px;
+}
+
+.black {
+    background-color: #444;
+}
+.white {
+    background-color: #eee;
+}
+
+.board-row {
+    display: flex;
+}
+

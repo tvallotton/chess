@@ -1,4 +1,4 @@
-use crate::piece::Piece;
+use crate::piece::{Color, Piece};
 
 /// A move represents the change of position of a piece.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

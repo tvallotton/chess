@@ -1,18 +1,14 @@
 use crate::board::Board;
 use crate::minimax::Node;
 use crate::moves::Move;
-use crate::opt::{Opt, Settings};
+use crate::opt::Settings;
 use crate::parameters::Params;
 use crate::piece::Color;
 
-use serde_json::{from_str, from_value};
-
-
+use serde_json::from_str;
 
 use std::fmt::Display;
-use std::fs::read_to_string;
 
-use structopt::StructOpt;
 use tap::Pipe;
 #[derive(Clone)]
 pub struct Game {
@@ -35,14 +31,8 @@ impl Game {
         Game {
             turn: Color::White,
             node: Node::default(),
-            opt: Opt::from_args()
-                .settings
-                .map(from_value)
-                .unwrap_or_else(|| {
-                    read_to_string("settings.json")
-                        .unwrap()
-                        .pipe(|x| from_str(&x))
-                })
+            opt: include_str!("../settings.json")
+                .pipe(|x| from_str(x))
                 .unwrap(),
         }
     }
