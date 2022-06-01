@@ -19,8 +19,10 @@ mod start_board;
 fn main() {
     // #[cfg(any(wasm_logger))]
     wasm_logger::init(Default::default());
+    log::info!("ASD"); 
     // #[cfg(any(web))]
     web::main();
+    
     #[cfg(pretty_env_logger)]
     pretty_env_logger::init();
     #[cfg(cli)]

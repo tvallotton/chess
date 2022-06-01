@@ -1,15 +1,14 @@
-use std::{ops::{BitOr}, fmt::Display};
-
+use std::{fmt::Display, ops::BitOr};
 
 pub use Color::*;
 pub use Kind::*;
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Piece {
     pub kind: Kind,
     pub color: Color,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Kind {
     King,
     Queen,
@@ -29,6 +28,7 @@ impl Default for Color {
         White
     }
 }
+
 
 impl BitOr<Kind> for Color {
     type Output = Piece;

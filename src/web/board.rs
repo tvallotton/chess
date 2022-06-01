@@ -1,8 +1,51 @@
 use super::square::Square;
+use crate::board::Board as BoardProps;
 use yew::prelude::{function_component as component, *};
 
+#[derive(Debug, Clone, Copy, Properties, PartialEq)]
+pub struct Props {
+    pub board: BoardProps,
+}
+
+pub fn color(rank: isize, file: isize) -> &'static str {
+    if (rank + file) % 2 == 0 {
+        "white"
+    } else {
+        "black"
+    }
+}
+
 #[component(Board)]
-pub fn board() -> Html {
+pub fn board(Props { board }: &Props) -> Html {
+    let mut total = html!();
+
+    for rank in 0..8 {
+        let mut row = html!();
+        for file in 0..8 {
+            let color = color(rank, file); 
+
+            let square = html! (
+                <Square
+                    color={color}
+                    file={file}
+                    rank={rank}
+                    piece={board[(rank, file)]}
+                />
+            );
+            row = html!(
+                <>{row} {square}</>
+            );
+        }
+        total = html!(
+            <>
+                {total}
+                <div class="board-row">
+                    {row}
+                </div>
+            </>
+        )
+    }
+    return total;
     html!(
         <div>
             <div class="board-row">

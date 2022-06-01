@@ -1,0 +1,28 @@
+.square {
+    height: 50px;
+    width: 50px;
+}
+
+.black {
+    background-color: gray;
+}
+.white {
+    background-color: #eee;
+}
+
+.board-row {
+    display: flex;
+}
+
+
+.piece-icon {
+    
+    max-height: 500%;
+    max-width: auto;
+}
+
+/* 
+div.black .piece-icon {
+    filter: invert(100%);
+    
+} */

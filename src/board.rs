@@ -9,14 +9,15 @@ use std::panic::UnwindSafe;
 use tap::prelude::*;
 
 use Kind::*;
+use yew::Properties;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Properties, PartialEq)]
 pub struct Board {
     pub table: [[Option<Piece>; 8]; 8],
     pub black_castle: Castle,
     pub white_castle: Castle,
 }
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Castle {
     pub kingside: bool,
     pub queenside: bool,
