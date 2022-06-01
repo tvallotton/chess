@@ -1,10 +1,15 @@
+use std::fmt::Debug;
+
 use super::square::Square;
 use crate::board::Board as BoardProps;
+use smart_default::SmartDefault;
 use yew::prelude::{function_component as component, *};
 
-#[derive(Debug, Clone, Copy, Properties, PartialEq)]
+#[derive(Clone, Properties, PartialEq, Default)]
 pub struct Props {
     pub board: BoardProps,
+    pub onclick: Callback<(isize, isize)>,
+    pub selected: Option<(isize, isize)>,
 }
 
 pub fn color(rank: isize, file: isize) -> &'static str {
@@ -16,13 +21,19 @@ pub fn color(rank: isize, file: isize) -> &'static str {
 }
 
 #[component(Board)]
-pub fn board(Props { board }: &Props) -> Html {
+pub fn board(
+    Props {
+        board,
+        onclick,
+        selected,
+    }: &Props,
+) -> Html {
     let mut total = html!();
 
     for rank in 0..8 {
         let mut row = html!();
         for file in 0..8 {
-            let color = color(rank, file); 
+            let color = color(rank, file);
 
             let square = html! (
                 <Square
@@ -30,6 +41,9 @@ pub fn board(Props { board }: &Props) -> Html {
                     file={file}
                     rank={rank}
                     piece={board[(rank, file)]}
+                    onclick={onclick}
+                    selected={*selected}
+
                 />
             );
             row = html!(
@@ -46,90 +60,4 @@ pub fn board(Props { board }: &Props) -> Html {
         )
     }
     return total;
-    html!(
-        <div>
-            <div class="board-row">
-                <Square color={"white"} rank={0} file={0} />
-                <Square color={"black"} rank={1} file={0} />
-                <Square color={"white"} rank={2} file={0} />
-                <Square color={"black"} rank={3} file={0} />
-                <Square color={"white"} rank={4} file={0} />
-                <Square color={"black"} rank={5} file={0} />
-                <Square color={"white"} rank={6} file={0} />
-                <Square color={"black"} rank={7} file={0} />
-            </div>
-            <div class="board-row">
-                <Square color={"black"} rank={0} file={1} />
-                <Square color={"white"} rank={1} file={1} />
-                <Square color={"black"} rank={2} file={1} />
-                <Square color={"white"} rank={3} file={1} />
-                <Square color={"black"} rank={4} file={1} />
-                <Square color={"white"} rank={5} file={1} />
-                <Square color={"black"} rank={6} file={1} />
-                <Square color={"white"} rank={7} file={1} />
-            </div>
-            <div class="board-row">
-                <Square color={"white"} rank={0} file={1} />
-                <Square color={"black"} rank={1} file={1} />
-                <Square color={"white"} rank={2} file={1} />
-                <Square color={"black"} rank={3} file={1} />
-                <Square color={"white"} rank={4} file={1} />
-                <Square color={"black"} rank={5} file={1} />
-                <Square color={"white"} rank={6} file={1} />
-                <Square color={"black"} rank={7} file={1} />
-            </div>
-            <div class="board-row">
-                <Square color={"black"} rank={0} file={1} />
-                <Square color={"white"} rank={1} file={1} />
-                <Square color={"black"} rank={2} file={1} />
-                <Square color={"white"} rank={3} file={1} />
-                <Square color={"black"} rank={4} file={1} />
-                <Square color={"white"} rank={5} file={1} />
-                <Square color={"black"} rank={6} file={1} />
-                <Square color={"white"} rank={7} file={1} />
-            </div>
-            <div class="board-row">
-                <Square color={"white"} rank={0} file={1} />
-                <Square color={"black"} rank={1} file={1} />
-                <Square color={"white"} rank={2} file={1} />
-                <Square color={"black"} rank={3} file={1} />
-                <Square color={"white"} rank={4} file={1} />
-                <Square color={"black"} rank={5} file={1} />
-                <Square color={"white"} rank={6} file={1} />
-                <Square color={"black"} rank={7} file={1} />
-            </div>
-
-            <div class="board-row">
-                <Square color={"black"} rank={0} file={1} />
-                <Square color={"white"} rank={1} file={1} />
-                <Square color={"black"} rank={2} file={1} />
-                <Square color={"white"} rank={3} file={1} />
-                <Square color={"black"} rank={4} file={1} />
-                <Square color={"white"} rank={5} file={1} />
-                <Square color={"black"} rank={6} file={1} />
-                <Square color={"white"} rank={7} file={1} />
-            </div>
-            <div class="board-row">
-                <Square color={"white"} rank={0} file={1} />
-                <Square color={"black"} rank={1} file={1} />
-                <Square color={"white"} rank={2} file={1} />
-                <Square color={"black"} rank={3} file={1} />
-                <Square color={"white"} rank={4} file={1} />
-                <Square color={"black"} rank={5} file={1} />
-                <Square color={"white"} rank={6} file={1} />
-                <Square color={"black"} rank={7} file={1} />
-            </div>
-            <div class="board-row">
-                <Square color={"black"} rank={0} file={1} />
-                <Square color={"white"} rank={1} file={1} />
-                <Square color={"black"} rank={2} file={1} />
-                <Square color={"white"} rank={3} file={1} />
-                <Square color={"black"} rank={4} file={1} />
-                <Square color={"white"} rank={5} file={1} />
-                <Square color={"black"} rank={6} file={1} />
-                <Square color={"white"} rank={7} file={1} />
-            </div>
-        </div>
-
-    )
 }

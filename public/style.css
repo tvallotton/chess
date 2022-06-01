@@ -4,7 +4,7 @@
 }
 
 .black {
-    background-color: gray;
+    background-color: #999;
 }
 .white {
     background-color: #eee;
@@ -16,11 +16,15 @@
 
 
 .piece-icon {
-    
     max-height: 500%;
     max-width: auto;
 }
-
+.selected.black.square {
+    background-color: #ccc;
+}
+.selected.white.square {
+    background-color: #ccc;
+}
 /* 
 div.black .piece-icon {
     filter: invert(100%);

@@ -11,7 +11,7 @@ impl Piece {
         let Piece { color, kind, .. } = self;
 
         let path = format!("/public/{color:?}/{kind:?}.svg").to_lowercase();
-        log::info!("{path}");
+
         let alt = format!("{color:?} {kind:?}").to_lowercase();
 
         html!(
@@ -26,24 +26,32 @@ pub struct Props {
     pub rank: isize,
     pub file: isize,
     pub piece: Option<Piece>,
+    pub onclick: Callback<(isize, isize)>,
+    pub selected: Option<(isize, isize)>,
 }
 
 #[component(Square)]
-pub fn square(
-    Props {
+pub fn square(props: &Props) -> Html {
+    let Props {
         color,
         rank,
         file,
         piece,
-    }: &Props,
-) -> Html {
-    log::info!("{piece:?}");
-    let class = format!("square {color}");
+        onclick,
+        selected,
+    } = props.clone();
+    let class = if selected == Some((rank, file)) {
+        format!("square {color} selected")
+    } else {
+        format!("square {color}")
+    };
+
     let piece = piece
         .map(|piece| piece.icon())
         .unwrap_or(html!());
+    // onclick
     html!(
-        <div class={class}  >
+        <div class={class} onclick={move |_| onclick.emit((rank, file))} >
             { piece }
         </div>
     )
