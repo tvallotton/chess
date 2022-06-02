@@ -12,9 +12,9 @@ use std::fmt::Display;
 use tap::Pipe;
 #[derive(Clone)]
 pub struct Game {
-    turn: Color,
-    node: Node,
-    opt: Settings,
+    pub turn: Color,
+    pub node: Node,
+    pub opt: Settings,
 }
 
 impl Display for Game {
@@ -42,6 +42,9 @@ impl Game {
             Color::White => &self.opt.white_params,
             Color::Black => &self.opt.black_params,
         }
+    }
+    pub fn set_board(&mut self, board: Board) {
+        self.node.board = board;
     }
     pub fn board(&self) -> Board {
         self.node.board
@@ -73,7 +76,6 @@ impl Game {
                     &mut white,
                 );
 
-                log::debug!("CHILD: {}\nminimax: {minimax}", node.board);
                 (mov, minimax)
             });
         if self.turn == Color::White {
@@ -96,16 +98,16 @@ impl Game {
     fn white_heuristic(&self) -> f32 {
         self.node
             .board
-            .heuristic(&self.opt.white_params, false)
+            .heuristic(&self.opt.white_params)
     }
     fn black_heuristic(&self) -> f32 {
         self.node
             .board
-            .heuristic(&self.opt.black_params, false)
+            .heuristic(&self.opt.black_params)
     }
     fn absolute_heuristic(&self) -> f32 {
         self.node
             .board
-            .heuristic(&self.opt.absolute_params, true)
+            .heuristic(&self.opt.absolute_params)
     }
 }

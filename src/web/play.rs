@@ -1,26 +1,30 @@
 use super::Board as BoardComponent;
-use crate::board::{Board};
-use crate::Game; 
+use crate::{board::Board, piece::Color};
+use crate::Game;
 use yew::prelude::{function_component as component, *};
 
 #[component(Play)]
 pub fn play() -> Html {
-    let game = use_state(Game::default);
+    let game = use_state(Game::new);
     let selected = use_state(|| None);
-    let board = game.board();
+    let game_ = game.clone();
     let selected_ = selected.clone();
     let onclick = Callback::from(move |(rank, file)| {
         if selected_.is_some() {
-            let mut new = *board.clone();
+            let mut new = game_.board();
             let from = selected_.unwrap();
             let to = (rank, file);
             let piece = new[from].take();
             new[to] = piece;
-            board.set(new);
+            let mut g = Game::clone(&*game_);
+            g.set_board(new);
+            g.turn = Color::White; 
             
+            g.play();
+            game_.set(g);
+
             selected_.set(None);
-            
-        } else if board[(rank, file)].is_some() {
+        } else if game_.board()[(rank, file)].is_some() {
             selected_.set(Some((rank, file)));
         }
     });
@@ -28,7 +32,8 @@ pub fn play() -> Html {
     html!(
         <>
         <h1>{"Play"}</h1>
-            <BoardComponent  board={game.board} onclick={onclick} selected={*selected}/>
+            <BoardComponent  board={game.board()} onclick={onclick} selected={*selected}/>
+            
         </>
     )
 }

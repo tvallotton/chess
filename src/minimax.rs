@@ -41,7 +41,7 @@ impl Node {
                     history: self.history.or(Some(mov)),
                     board: new_board,
                     children: RefCell::default(),
-                    heuristic: new_board.heuristic(params, false),
+                    heuristic: new_board.heuristic(params),
                     turn: turn.opposite(),
                 }
             })
@@ -60,15 +60,10 @@ impl Node {
                     history: self.history.or(Some(mov)),
                     board: new_board,
                     children: RefCell::default(),
-                    heuristic: new_board.heuristic(params, false),
+                    heuristic: new_board.heuristic(params),
                     turn: turn.opposite(),
                 };
 
-                log::debug!(
-                    "CHILD:\n{}\nheuristic {}",
-                    child_node.board,
-                    child_node.heuristic
-                );
                 (child_node, mov)
             })
     }
@@ -90,8 +85,7 @@ impl Node {
     //     }
     // }
     fn heuristic(&self, params: &Params) -> f32 {
-        self.board
-            .heuristic(params, false)
+        self.board.heuristic(params)
     }
 
     pub fn minimax(

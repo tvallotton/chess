@@ -1,5 +1,14 @@
 use crate::piece::{Piece};
 
+enum ComplexMove {
+    // this may be a simple capture. 
+    SimpleMove(Translation), 
+    // The translation object represents 
+    // the attacker's move
+    Passant(Translation), 
+}
+type Translation = Move; 
+
 /// A move represents the change of position of a piece.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Move {

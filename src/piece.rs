@@ -1,4 +1,4 @@
-use std::{ops::BitOr};
+use std::{ops::BitOr, };
 
 pub use Color::*;
 pub use Kind::*;
@@ -29,7 +29,6 @@ impl Default for Color {
     }
 }
 
-
 impl BitOr<Kind> for Color {
     type Output = Piece;
     fn bitor(self, kind: Kind) -> Self::Output {
@@ -44,7 +43,13 @@ impl Color {
             White => Black,
         }
     }
-    pub fn pawn_blockking_rank(self) -> isize {
+    pub fn promotion_rank(self) -> isize {
+        match self {
+            Black => 0,
+            White => 7,
+        }
+    }
+    pub fn pawn_blocking_rank(self) -> isize {
         match self {
             Black => 2,
             White => 5,
@@ -63,52 +68,3 @@ impl Color {
         }
     }
 }
-pub const WH_ROOK: Piece = Piece {
-    kind: Rook,
-    color: White,
-};
-pub const WH_BISHOP: Piece = Piece {
-    kind: Bishop,
-    color: White,
-};
-pub const WH_KING: Piece = Piece {
-    kind: King,
-    color: White,
-};
-pub const WH_QUEEN: Piece = Piece {
-    kind: Queen,
-    color: White,
-};
-pub const WH_KNIGHT: Piece = Piece {
-    kind: Knight,
-    color: White,
-};
-pub const WH_PAWN: Piece = Piece {
-    kind: Pawn,
-    color: White,
-};
-
-pub const BL_ROOK: Piece = Piece {
-    kind: Rook,
-    color: Black,
-};
-pub const BL_BISHOP: Piece = Piece {
-    kind: Bishop,
-    color: Black,
-};
-pub const BL_KING: Piece = Piece {
-    kind: King,
-    color: Black,
-};
-pub const BL_QUEEN: Piece = Piece {
-    kind: Queen,
-    color: Black,
-};
-pub const BL_KNIGHT: Piece = Piece {
-    kind: Knight,
-    color: Black,
-};
-pub const BL_PAWN: Piece = Piece {
-    kind: Pawn,
-    color: Black,
-};

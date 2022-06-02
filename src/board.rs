@@ -1,46 +1,140 @@
 use crate::{
     moves::{Move, Play, Position},
     parameters::Params,
-    piece::{Color, Kind, Piece},
+    piece::{self, Color, Kind, Piece},
 };
-use std::panic::UnwindSafe;
-
-
+use itertools::chain;
 use tap::prelude::*;
-
-use Kind::*;
 use yew::Properties;
+use Color::*;
+use Kind::*;
 
+/// # Board
+/// It holds all the state in a board.
+/// The default value for Board is the initial chess setup.
+/// To create an empty board the `empty()` constructor can be used.
 #[derive(Debug, Clone, Copy, Properties, PartialEq)]
 pub struct Board {
+    pub turn: Color,
     pub table: [[Option<Piece>; 8]; 8],
-    pub black_castle: Castle,
-    pub white_castle: Castle,
+    pub black: Castle,
+    pub white: Castle,
+    // if there is a pawn vulnerable to the passant rule
+    // then this field will contain that piece's position.
+    pub passant: Option<Position>,
 }
+
+/// # Castle
+/// Indicates whether a player can castle in either side.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Castle {
-    pub kingside: bool,
-    pub queenside: bool,
+    pub kingside: Option<()>,
+    pub queenside: Option<()>,
+}
+
+impl Default for Castle {
+    fn default() -> Self {
+        Castle {
+            kingside: Some(()),
+            queenside: Some(()),
+        }
+    }
+}
+impl Castle {
+    fn no_castle() -> Self {
+        Castle {
+            kingside: None,
+            queenside: None,
+        }
+    }
 }
 
 fn cast<'a, T: Iterator<Item = Position> + 'a>(obj: T) -> Box<dyn Iterator<Item = Position> + 'a> {
     Box::new(obj) as Box<dyn Iterator<Item = Position>>
 }
 type Positions<'a> = Box<dyn Iterator<Item = Position> + 'a>;
-impl UnwindSafe for Board {}
+// #[thiserror]
+// enum MoveError {
+//     #[error("There was no pice on the given square")],
+//     NoPice,
+//     #[error("Pan")]
+// }
+
 impl Board {
     pub fn empty() -> Board {
         Board {
-            table: [[None; 8]; 8],
-            black_castle: Castle {
-                kingside: true,
-                queenside: true,
-            },
-            white_castle: Castle {
-                kingside: true,
-                queenside: true,
-            },
+            turn: White,
+            passant: None,
+            table: Default::default(),
+            black: Castle::default(),
+            white: Castle::default(),
         }
+    }
+    #[inline]
+    pub fn apply_king_move(&mut self, piece: Option<Piece>, Move { from, to }: Move) {
+        // let dir = to.file - from.file;
+        // if (to.file - from.file).abs() > 1 {
+
+        // }
+        self[to] = piece;
+
+        match self.turn {
+            Black => self.black = Castle::no_castle(),
+            White => self.white = Castle::no_castle(),
+        }
+    }
+
+    #[inline]
+    pub fn remove_check_rights(&mut self, Move { from, to }: Move) {
+        match self.turn {
+            Black if from.file == 0 => self.black.queenside = None,
+            White if from.file == 0 => self.white.queenside = None,
+            Black if from.file == 7 => self.black.kingside = None,
+            White if from.file == 7 => self.white.kingside = None,
+            Black if to.file == 0 => self.black.queenside = None,
+            White if to.file == 0 => self.white.queenside = None,
+            Black if to.file == 7 => self.black.kingside = None,
+            White if to.file == 7 => self.white.kingside = None,
+            _ => (),
+        }
+    }
+
+    #[inline]
+    pub fn apply_pawn_move(&mut self, mut piece: Option<Piece>, Move { from, mut to }: Move) {
+        // if we do a two square move we are vulnerable to
+        // the passant rule
+        if from.rank + 2 == to.rank {
+            self.passant = Some(to);
+        }
+        // if to piece was taken in a diagonal move
+        // this implies that a en passant pawn was captured
+        // When moving straight this does nothing.
+        self[to].or_else(|| {
+            to.rank -= self.turn.pawn_dir();
+            self[to].take()
+        });
+        // promote to queen if we reach the last rank
+        if to.rank == self.turn.promotion_rank() {
+            piece = Some(self.turn | Queen);
+        }
+        self[to] = piece;
+    }
+    /// This function performs no checks at all.  
+    /// This is intended for fast computations.
+    /// On invalid inputs its behavior is erratic.
+    #[inline]
+    pub fn apply_unchecked(&mut self, mov: Move) {
+        let Move { from, to } = mov;
+        let piece = self[from].take();
+
+        match piece.map(|x| x.kind) {
+            Some(Queen | Bishop | Knight | Rook) => self[to] = piece,
+            Some(Pawn) => self.apply_pawn_move(piece, mov),
+
+            Some(King) => self.apply_king_move(piece, mov),
+            None => unreachable!(),
+        }
+        self.remove_check_rights(mov);
     }
 
     pub fn apply(&self, mov: Move) -> Board {
@@ -59,7 +153,7 @@ impl Board {
 
     /// Positive numbers mean that white is winning. Negative numbers means that black is winning.
     #[inline]
-    pub fn heuristic(&self, params: &Params, log: bool) -> f32 {
+    pub fn heuristic(&self, params: &Params) -> f32 {
         let mut score = params.turn_value;
 
         for i in 0..8 {
@@ -91,15 +185,9 @@ impl Board {
                             }
                         });
                     let Piece { kind, color } = piece;
-                    if piece.color == Color::White {
-                        if log {
-                            log::debug!("{color:?} {kind:?}: {piece_val}");
-                        }
+                    if piece.color == White {
                         score += piece_val;
                     } else {
-                        if log {
-                            log::debug!("{color:?} {kind:?}: {piece_val}");
-                        }
                         score -= piece_val;
                     }
                 }
@@ -124,7 +212,7 @@ impl Board {
     //             Some("♔") => White | King,
     //             Some("♗") => White | Bishop,
     //             Some("♖") => White | Rook,
-    //             Some("♘") => White | Knight, 
+    //             Some("♘") => White | Knight,
     //             _ => return,
     //         });
     //     }
@@ -237,11 +325,11 @@ impl Board {
     /// # King
     /// ## ready
     /// * basic moves
-    /// ## missing
     /// * castling
+
     fn king_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Play> {
-        self.relative(pos, color, 0, 1)
-            .into_iter()
+        self.king_castle_moves(pos, color)
+            .chain(self.relative(pos, color, 0, 1))
             .chain(self.relative(pos, color, 0, -1))
             .chain(self.relative(pos, color, 1, 0))
             .chain(self.relative(pos, color, 1, 1))
@@ -250,6 +338,33 @@ impl Board {
             .chain(self.relative(pos, color, -1, 1))
             .chain(self.relative(pos, color, -1, -1))
     }
+    fn king_castle_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Play> {
+        let castle = match self.turn {
+            Black => self.black,
+            White => self.white,
+        };
+        let kingside = castle.kingside.and_then(|_| {
+            let is_clear =
+                self[(0, 1)].is_none() && self[(0, 2)].is_none() && self[(0, 3)].is_none();
+            if is_clear {
+                return Some(self.relative(pos, color, 0, -3));
+            }
+            None
+        });
+        castle
+            .queenside
+            .and_then(|_| {
+                let is_clear = self[(0, 5)].is_none() && self[(0, 6)].is_none();
+                if is_clear {
+                    return Some(self.relative(pos, color, 0, 2));
+                }
+                None
+            })
+            .into_iter()
+            .chain(kingside)
+            .flatten()
+    }
+
     /// # Pawns
     /// ## ready
     /// 1. double initial jump
@@ -265,7 +380,7 @@ impl Board {
             .chain(self.capture_only(pos, color, color.pawn_dir(), -1))
             .chain(self.moves_only(pos, color, color.pawn_dir(), 0))
             .chain({
-                let blocking: Position = (color.pawn_blockking_rank(), pos.file).into();
+                let blocking: Position = (color.pawn_blocking_rank(), pos.file).into();
                 let piece = self[blocking];
                 if pos.rank == color.pawn_start() && piece.is_none() {
                     self.moves_only(pos, color, 2 * color.pawn_dir(), 0)
@@ -360,7 +475,6 @@ impl Board {
             })
     }
 }
-
 impl<P: Into<Position>> std::ops::Index<P> for Board {
     type Output = Option<Piece>;
     fn index(&self, index: P) -> &Self::Output {

@@ -5,69 +5,58 @@ use crate::piece::*;
 
 impl Default for Board {
     fn default() -> Self {
-        START_BOARD
+        let empty = [None, None, None, None, None, None, None, None];
+        Board {
+            table: [
+                [
+                    Some(Black | Rook),
+                    Some(Black | Knight),
+                    Some(Black | Bishop),
+                    Some(Black | Queen),
+                    Some(Black | King),
+                    Some(Black | Bishop),
+                    Some(Black | Knight),
+                    Some(Black | Rook),
+                ],
+                [
+                    Some(Black | Pawn),
+                    Some(Black | Pawn),
+                    Some(Black | Pawn),
+                    Some(Black | Pawn),
+                    Some(Black | Pawn),
+                    Some(Black | Pawn),
+                    Some(Black | Pawn),
+                    Some(Black | Pawn),
+                ],
+                empty,
+                empty,
+                empty,
+                empty,
+                [
+                    Some(White | Pawn),
+                    Some(White | Pawn),
+                    Some(White | Pawn),
+                    Some(White | Pawn),
+                    Some(White | Pawn),
+                    Some(White | Pawn),
+                    Some(White | Pawn),
+                    Some(White | Pawn),
+                ],
+                [
+                    Some(White | Rook),
+                    Some(White | Knight),
+                    Some(White | Bishop),
+                    Some(White | Queen),
+                    Some(White | King),
+                    Some(White | Bishop),
+                    Some(White | Knight),
+                    Some(White | Rook),
+                ],
+            ],
+            ..Board::empty()
+        }
     }
 }
-
-const START_BOARD: Board = {
-    let empty = [None, None, None, None, None, None, None, None];
-    Board {
-        white_castle: Castle {
-            queenside: true,
-            kingside: true,
-        },
-        black_castle: Castle {
-            queenside: true,
-            kingside: true,
-        },
-        table: [
-            [
-                Some(BL_ROOK),
-                Some(BL_KNIGHT),
-                Some(BL_BISHOP),
-                Some(BL_QUEEN),
-                Some(BL_KING),
-                Some(BL_BISHOP),
-                Some(BL_KNIGHT),
-                Some(BL_ROOK),
-            ],
-            [
-                Some(BL_PAWN),
-                Some(BL_PAWN),
-                Some(BL_PAWN),
-                Some(BL_PAWN),
-                Some(BL_PAWN),
-                Some(BL_PAWN),
-                Some(BL_PAWN),
-                Some(BL_PAWN),
-            ],
-            empty,
-            empty,
-            empty,
-            empty,
-            [
-                Some(WH_PAWN),
-                Some(WH_PAWN),
-                Some(WH_PAWN),
-                Some(WH_PAWN),
-                Some(WH_PAWN),
-                Some(WH_PAWN),
-                Some(WH_PAWN),
-                Some(WH_PAWN),
-            ],
-            [
-                Some(WH_ROOK),
-                Some(WH_KNIGHT),
-                Some(WH_BISHOP),
-                Some(WH_QUEEN),
-                Some(WH_KING),
-                Some(WH_BISHOP),
-                Some(WH_KNIGHT),
-                Some(WH_ROOK),
-            ],
-        ],
-    }
-};
 
 impl Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
