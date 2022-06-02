@@ -7,7 +7,6 @@ use game::Game;
 mod board;
 mod cli;
 mod game;
-mod web; 
 mod minimax;
 mod moves;
 mod opt;
@@ -15,16 +14,17 @@ mod parameters;
 mod piece;
 mod queue;
 mod start_board;
+mod web;
 
 fn main() {
-    // #[cfg(any(wasm_logger))]
+    #[cfg(target_family = "wasm")]
     wasm_logger::init(Default::default());
-    log::info!("ASD"); 
-    // #[cfg(any(web))]
+    log::info!("wasm");
+    #[cfg(target_family = "wasm")]
     web::main();
-    
-    #[cfg(pretty_env_logger)]
+
+    #[cfg(not(target_family = "wasm"))]
     pretty_env_logger::init();
-    #[cfg(cli)]
+    
     cli::main();
 }

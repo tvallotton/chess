@@ -1,13 +1,13 @@
-use crate::piece::{Piece};
+use crate::piece::Piece;
 
 enum ComplexMove {
-    // this may be a simple capture. 
-    SimpleMove(Translation), 
-    // The translation object represents 
+    // this may be a simple capture.
+    SimpleMove(Translation),
+    // The translation object represents
     // the attacker's move
-    Passant(Translation), 
+    Passant(Translation),
 }
-type Translation = Move; 
+type Translation = Move;
 
 /// A move represents the change of position of a piece.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -41,6 +41,14 @@ pub struct Position {
 }
 
 impl Position {
+   pub fn validate(self) -> Option<Self> {
+        let Self { rank, file } = self;
+        if 0 <= rank && rank < 8 && 0 <= file && file < 8 {
+            Some(self)
+        } else {
+            None
+        }
+    }
     pub fn relative(self, pos: &'_ [(isize, isize)]) -> impl Iterator<Item = Self> + '_ {
         pos.iter()
             .copied()

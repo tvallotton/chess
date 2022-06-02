@@ -1,6 +1,7 @@
 use super::Board as BoardComponent;
-use crate::{board::Board, piece::Color};
+use crate::moves::{Move, Position};
 use crate::Game;
+use crate::{board::Board, piece::Color};
 use yew::prelude::{function_component as component, *};
 
 #[component(Play)]
@@ -12,14 +13,15 @@ pub fn play() -> Html {
     let onclick = Callback::from(move |(rank, file)| {
         if selected_.is_some() {
             let mut new = game_.board();
-            let from = selected_.unwrap();
-            let to = (rank, file);
-            let piece = new[from].take();
-            new[to] = piece;
+
+            new.apply_unchecked(Move {
+                from: Position::from(selected_.unwrap()),
+                to: (rank, file).into(),
+            });
             let mut g = Game::clone(&*game_);
             g.set_board(new);
-            g.turn = Color::White; 
-            
+            g.turn = Color::White;
+
             g.play();
             game_.set(g);
 
