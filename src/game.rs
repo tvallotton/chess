@@ -43,7 +43,7 @@ impl Game {
             Color::Black => &self.opt.black_params,
         }
     }
-    fn board(&self) -> Board {
+    pub fn board(&self) -> Board {
         self.node.board
     }
     pub fn play(&mut self) -> bool {
