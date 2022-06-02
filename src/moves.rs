@@ -34,14 +34,14 @@ pub fn playable(r#move: Play) -> bool {
     !matches!(r#move, Play::Defense(_, _))
 }
 
-#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Position {
     pub rank: isize,
     pub file: isize,
 }
 
 impl Position {
-   pub fn validate(self) -> Option<Self> {
+    pub fn validate(self) -> Option<Self> {
         let Self { rank, file } = self;
         if 0 <= rank && rank < 8 && 0 <= file && file < 8 {
             Some(self)

@@ -1,8 +1,9 @@
 use crate::{
     moves::{Move, Play, Position},
-    parameters::Params,
+    parameters::{self, Params},
     piece::{self, Color, Kind, Piece},
 };
+use arrayvec::ArrayVec;
 use itertools::chain;
 use tap::prelude::*;
 use yew::Properties;
@@ -92,6 +93,29 @@ impl Board {
         }
     }
 
+    fn children(&self, params: &Params) -> (f32, ArrayVec<Self, 128>) {
+        let mut h = 0.0;
+        let mut children = ArrayVec::new();
+        self.moves().for_each(|mv| {
+            let mut child = self.clone();
+
+            match self[mv.to] {
+                Some(capt) if capt.color != self.turn => {
+                    child.apply_unchecked(mv);
+                    self.h_capture(&mut h, params, capt, mv);
+                }
+                None => {
+                    self.h_move(&mut h, params, mv);
+                }
+                
+                _ => (),
+            }
+            children.push(child)
+        });
+        (h, children)
+    }
+    fn h_move(&self, h: &mut f32, params: &Params, mv: Move) {}
+    fn h_capture(&self, h: &mut f32, params: &Params, capt: Piece, mv: Move) {}
     #[inline]
     pub fn remove_check_rights(&mut self, Move { from, to }: Move) {
         match self.turn {
@@ -205,9 +229,13 @@ impl Board {
         score
     }
 
-    pub fn play_with(&self, params: &Params) {}
+    pub fn play_with(&self, params: &Params) -> Move {
+        todo!()
+    }
 
-    fn minimax(&self, params: &Params, depth: i32, alpha: &mut f32, beta: &f32) {}
+    fn minimax(&self, params: &Params, depth: i32, alpha: &mut f32, beta: &mut f32) -> f32 {
+        todo!()
+    }
 
     // pub fn minimax(
     //     &self,
@@ -258,21 +286,30 @@ impl Board {
     }
     /// returns an iterator over the pieces with
     /// filtering over the provided color.
+    /// They are provided in the order of least valuable to
+    /// most valuable.
     pub fn colored_pieces(&self, color: Color) -> impl Iterator<Item = (Piece, Position)> + '_ {
-        (0..8)
+        let mut vec: ArrayVec<_, 16> = (0..8)
             .flat_map(|rank| (0..8).map(move |file| (rank, file)))
             .map(Position::from)
             .filter_map(move |pos| (self[pos]?, pos).pipe(Some))
             .filter(move |(piece, _)| piece.color == color)
+            .pipe(|iter| ArrayVec::from_iter(iter));
+
+        vec.sort();
+        None.into_iter()
     }
-    pub fn moves(&self, turn: Color) -> impl Iterator<Item = Move> + '_ {
-        self.colored_pieces(turn)
+    pub fn moves(&self) -> impl Iterator<Item = Move> + '_ {
+        self.colored_pieces(self.turn)
             .map(|(_, pos)| pos)
             .flat_map(|pos| self.plays_for(pos))
     }
+    pub fn advance_turn(&mut self) {
+        self.turn = self.turn.opposite();
+    }
 
     pub fn playable_moves(&self, turn: Color) -> impl Iterator<Item = Move> + '_ {
-        self.moves(turn)
+        self.moves()
     }
 
     #[allow(unreachable_patterns)]

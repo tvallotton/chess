@@ -22,7 +22,7 @@ fn main() {
     log::info!("wasm");
     #[cfg(target_family = "wasm")]
     web::main();
-
+    
     #[cfg(not(target_family = "wasm"))]
     pretty_env_logger::init();
     

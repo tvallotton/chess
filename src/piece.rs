@@ -1,23 +1,23 @@
-use std::{ops::BitOr, };
+use std::ops::BitOr;
 
 pub use Color::*;
 pub use Kind::*;
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Piece {
     pub kind: Kind,
     pub color: Color,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Kind {
-    King,
-    Queen,
-    Bishop,
-    Knight,
-    Rook,
     Pawn,
+    Knight,
+    Bishop,
+    Rook,
+    Queen,
+    King,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Color {
     Black,
     White,
