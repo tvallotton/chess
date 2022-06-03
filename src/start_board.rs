@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::board::{Board, Castle};
+use crate::board::{Board};
 use crate::piece::*;
 
 impl Default for Board {

@@ -33,8 +33,8 @@ impl Params {
         self.attacked * self.value((attacked, mov.to)) / (1.0 + self.value((by, mov.from)))
     }
 
-    pub fn defended(&self, defended: (Piece, Position), by: (Piece, Position)) -> f32 {
-        self.defended * 1.0 / (1.0 + self.value(by) * self.value(defended).powi(2))
+    pub fn defended(&self, defended: Piece, by: Piece, Move { to, from }: Move) -> f32 {
+        self.defended * 1.0 / (1.0 + self.value((by, from)) * self.value((defended, from)).powi(2))
     }
     pub fn mov(&self, piece: Piece, mov: Move) -> f32 {
         self.mov_value * self.value((piece, mov.to))

@@ -1,10 +1,10 @@
 use crate::{
-    moves::{Move, Play, Position},
-    parameters::{self, Params},
-    piece::{self, Color, Kind, Piece},
+    moves::{Move, Position},
+    parameters::Params,
+    piece::{Color, Kind, Piece},
 };
 use arrayvec::ArrayVec;
-use itertools::chain;
+
 use tap::prelude::*;
 use yew::Properties;
 use Color::*;
@@ -92,30 +92,73 @@ impl Board {
             White => self.white = Castle::no_castle(),
         }
     }
-
-    fn children(&self, params: &Params) -> (f32, ArrayVec<Self, 128>) {
-        let mut h = 0.0;
+    /// it computes the children.
+    fn children(&self, params: &Params) -> ArrayVec<Self, 128> {
         let mut children = ArrayVec::new();
         self.moves().for_each(|mv| {
-            let mut child = self.clone();
-
-            match self[mv.to] {
+            let mut child = *self;
+            child.apply_unchecked(mv);
+            children.push(child);
+        });
+        children
+    }
+    /// It computes the full heuristic.
+    #[inline]
+    pub fn heuristic(&self, params: &Params) -> f32 {
+        let mut h = 0.0;
+        self.moves_for(White)
+            .chain(self.moves_for(Black))
+            .for_each(|mv| match self[mv.to] {
                 Some(capt) if capt.color != self.turn => {
-                    child.apply_unchecked(mv);
                     self.h_capture(&mut h, params, capt, mv);
                 }
                 None => {
                     self.h_move(&mut h, params, mv);
                 }
-                
+                Some(def) => {
+                    self.h_defend(&mut h, params, def, mv);
+                }
+                _ => (),
+            });
+        h
+    }
+    /// it computes the children along with a one sided heuristic
+    /// (only for the current player).
+    fn h_children(&self, params: &Params) -> (f32, ArrayVec<Self, 128>) {
+        let mut h = 0.0;
+        let mut children = ArrayVec::new();
+        self.moves().for_each(|mv| {
+            let mut child = *self;
+            child.apply_unchecked(mv);
+            children.push(child);
+            match self[mv.to] {
+                Some(capt) if capt.color != self.turn => {
+                    self.h_capture(&mut h, params, capt, mv);
+                }
+                None => {
+                    self.h_move(&mut h, params, mv);
+                }
+                Some(def) => {
+                    self.h_defend(&mut h, params, def, mv);
+                }
                 _ => (),
             }
-            children.push(child)
         });
         (h, children)
     }
-    fn h_move(&self, h: &mut f32, params: &Params, mv: Move) {}
-    fn h_capture(&self, h: &mut f32, params: &Params, capt: Piece, mv: Move) {}
+    fn h_defend(&self, h: &mut f32, params: &Params, def: Piece, mv: Move) {
+        let by = self[mv.from].unwrap();
+        *h = params.defended(def, by, mv);
+    }
+    fn h_move(&self, h: &mut f32, params: &Params, mov: Move) {
+        let piece = self[mov.from].unwrap();
+        *h = params.mov(piece, mov);
+    }
+    fn h_capture(&self, h: &mut f32, params: &Params, capt: Piece, mv: Move) {
+        let by = self[mv.from].unwrap();
+        *h = params.attacked(capt, by, mv);
+    }
+
     #[inline]
     pub fn remove_check_rights(&mut self, Move { from, to }: Move) {
         match self.turn {
@@ -185,55 +228,12 @@ impl Board {
     }
 
     /// Positive numbers mean that white is winning. Negative numbers means that black is winning.
-    #[inline]
-    pub fn heuristic(&self, params: &Params) -> f32 {
-        let mut score = params.turn_value;
 
-        for i in 0..8 {
-            for j in 0..8 {
-                let pos = (i, j).into();
-
-                if let Some(piece) = self[pos] {
-                    let mut piece_val = params.piece_val((piece, pos));
-
-                    self.plays_for(pos)
-                        .for_each(|play| {
-                            // we want more available moves, but we don't want to use the queen too early
-                            piece_val +=
-                                params.available_moves / (1.0 + params.value((piece, pos)));
-
-                            // match play {
-                            //     Play::Capture(mov, taken) => {
-                            //         piece_val += params.attacked(taken, piece, mov);
-                            //         piece_val += params.mov(piece, mov);
-                            //     }
-                            //     Play::Defense(mov, def) => {
-                            //         piece_val += params.defended((def, mov.to), (piece, mov.from));
-                            //         piece_val += params.mov(piece, mov);
-                            //     }
-                            //     Play::Move(mov) => {
-                            //         piece_val += params.mov(piece, mov);
-                            //     }
-                            //     _ => panic!(),
-                            // }
-                        });
-                    let Piece { kind, color } = piece;
-                    if piece.color == White {
-                        score += piece_val;
-                    } else {
-                        score -= piece_val;
-                    }
-                }
-            }
-        }
-        score
-    }
-
-    pub fn play_with(&self, params: &Params) -> Move {
+    pub fn play_with(&self, _params: &Params) -> Move {
         todo!()
     }
 
-    fn minimax(&self, params: &Params, depth: i32, alpha: &mut f32, beta: &mut f32) -> f32 {
+    fn minimax(&self, _params: &Params, _depth: i32, _alpha: &mut f32, _beta: &mut f32) -> f32 {
         todo!()
     }
 
@@ -302,18 +302,24 @@ impl Board {
     pub fn moves(&self) -> impl Iterator<Item = Move> + '_ {
         self.colored_pieces(self.turn)
             .map(|(_, pos)| pos)
-            .flat_map(|pos| self.plays_for(pos))
+            .flat_map(|pos| self.plays_for_piece(pos))
     }
+    pub fn moves_for(&self, player: Color) -> impl Iterator<Item = Move> + '_ {
+        self.colored_pieces(player)
+            .map(|(_, pos)| pos)
+            .flat_map(|pos| self.plays_for_piece(pos))
+    }
+
     pub fn advance_turn(&mut self) {
         self.turn = self.turn.opposite();
     }
 
-    pub fn playable_moves(&self, turn: Color) -> impl Iterator<Item = Move> + '_ {
+    pub fn playable_moves(&self, _turn: Color) -> impl Iterator<Item = Move> + '_ {
         self.moves()
     }
 
     #[allow(unreachable_patterns)]
-    pub fn plays_for(&self, pos: Position) -> impl Iterator<Item = Move> + '_ {
+    pub fn plays_for_piece(&self, pos: Position) -> impl Iterator<Item = Move> + '_ {
         use itertools::Either::*;
         self[pos]
             .into_iter()
@@ -492,7 +498,7 @@ impl Board {
         self[mov.to].map(|_| mov)
     }
 
-    fn relative(&self, from: Position, color: Color, rank: isize, file: isize) -> Option<Move> {
+    fn relative(&self, from: Position, _color: Color, rank: isize, file: isize) -> Option<Move> {
         let to = Position {
             rank: from.rank + rank,
             file: from.file + file,
@@ -507,7 +513,7 @@ impl Board {
     pub fn walk(
         &'_ self,
         pos: Position,
-        color: Color,
+        _color: Color,
         rank: isize,
         file: isize,
     ) -> impl Iterator<Item = Move> + '_ {

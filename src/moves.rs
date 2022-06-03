@@ -43,7 +43,7 @@ pub struct Position {
 impl Position {
     pub fn validate(self) -> Option<Self> {
         let Self { rank, file } = self;
-        if 0 <= rank && rank < 8 && 0 <= file && file < 8 {
+        if (0..8).contains(&rank) && 0 <= file && file < 8 {
             Some(self)
         } else {
             None

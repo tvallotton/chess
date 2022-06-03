@@ -1,7 +1,7 @@
 use super::Board as BoardComponent;
 use crate::moves::{Move, Position};
 use crate::Game;
-use crate::{board::Board, piece::Color};
+use crate::{piece::Color};
 use yew::prelude::{function_component as component, *};
 
 #[component(Play)]
