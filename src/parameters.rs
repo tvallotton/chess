@@ -1,4 +1,5 @@
 use crate::{
+    game::Game,
     moves::{Move, Position},
     piece::{Color, Kind, Piece},
 };
@@ -17,6 +18,7 @@ pub struct Params {
     pub attacked: f32,
     pub available_moves: f32,
     pub turn_value: f32,
+    pub max_depth: i32,
     pub pawn: ValueTable,
     pub king: ValueTable,
     pub queen: ValueTable,
@@ -34,7 +36,12 @@ impl Params {
     }
 
     pub fn defended(&self, defended: Piece, by: Piece, Move { to, from }: Move) -> f32 {
-        self.defended * 1.0 / (1.0 + self.value((by, from)) * self.value((defended, from)).powi(2))
+        self.defended * 1.0
+            / (1.0
+                + self.value((by, from))
+                    * self
+                        .value((defended, from))
+                        .powi(2))
     }
     pub fn mov(&self, piece: Piece, mov: Move) -> f32 {
         self.mov_value * self.value((piece, mov.to))
@@ -49,6 +56,12 @@ impl Params {
             Queen => &self.queen,
             Pawn => &self.pawn,
         })[index]
+    }
+}
+
+impl Default for Params {
+    fn default() -> Self {
+        Game::new().opt.absolute_params.clone()
     }
 }
 

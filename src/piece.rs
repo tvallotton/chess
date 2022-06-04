@@ -1,4 +1,4 @@
-use std::ops::BitOr;
+use std::{fmt::Display, ops::BitOr};
 
 pub use Color::*;
 pub use Kind::*;
@@ -65,6 +65,27 @@ impl Color {
         match self {
             Black => 1,
             White => -1,
+        }
+    }
+}
+impl Display for Kind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Bishop => write!(f, "♝")?,
+            Rook => write!(f, "♜")?,
+            King => write!(f, "♚")?,
+            Queen => write!(f, "♛")?,
+            Pawn => write!(f, "♟")?,
+            Knight => write!(f, "♞")?,
+        }
+        Ok(())
+    }
+}
+impl Display for Color {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            White => write!(f, "white"),
+            Black => write!(f, "black"),
         }
     }
 }

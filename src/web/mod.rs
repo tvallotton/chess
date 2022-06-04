@@ -24,7 +24,7 @@ enum Route {
 
 fn switch(route: &Route) -> Html {
     match route {
-        Route::Home => html!(<Board board={Props::default()} onclick={Callback::noop()} />),
+        Route::Home => html!(<Board board={Props::default()} onclick={Callback::noop()}  />),
         Route::Play => html!(<Play />),
         _ => html!(),
     }

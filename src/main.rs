@@ -26,5 +26,5 @@ fn main() {
     #[cfg(not(target_family = "wasm"))]
     pretty_env_logger::init();
     
-    cli::main();
+    // cli::main();
 }

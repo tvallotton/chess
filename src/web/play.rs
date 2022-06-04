@@ -1,41 +1,67 @@
 use super::Board as BoardComponent;
+use crate::board::Board;
 use crate::moves::{Move, Position};
-use crate::Game;
-use crate::{piece::Color};
-use yew::prelude::{function_component as component, *};
+use crate::piece::Color;
+use yew::prelude::{function_component as component, UseStateHandle as U, *};
+
+fn onclick(board: &U<Board>, selected: &U<Option<(isize, isize)>>) -> Callback<(isize, isize)> {
+    let board = board.clone();
+    let selected = selected.clone();
+    Callback::from(move |to: (_, _)| {
+        if let Some(from) = *selected {
+            let mut new = Board::clone(&board);
+
+            new.apply_unchecked(Move {
+                from: from.into(),
+                to: to.into(),
+            });
+
+            new.advance_turn();
+            selected.set(None);
+            board.set(new);
+        } else if board[to].is_some() {
+            selected.set(Some(to));
+        }
+    })
+}
+
+fn play(board: &Board) -> impl FnMut(MouseEvent)  {
+    
+    |_| {
+
+    }
+}
 
 #[component(Play)]
 pub fn play() -> Html {
-    let game = use_state(Game::new);
+    let board = use_state(Board::default);
     let selected = use_state(|| None);
-    let game_ = game.clone();
+
     let selected_ = selected.clone();
-    let onclick = Callback::from(move |(rank, file)| {
-        if selected_.is_some() {
-            let mut new = game_.board();
+    let board_ = board.clone();
 
-            new.apply_unchecked(Move {
-                from: Position::from(selected_.unwrap()),
-                to: (rank, file).into(),
-            });
-            let mut g = Game::clone(&*game_);
-            g.set_board(new);
-            g.turn = Color::White;
+    let onclick = onclick(&board, &selected);
 
-            g.play();
-            game_.set(g);
+    let selected_ = selected.clone();
+    let board_ = board.clone();
+    let play = move |_| {
+        let mut new = Board::clone(&board_);
+        let mov = new
+            .play_with(&Default::default())
+            .unwrap();
 
-            selected_.set(None);
-        } else if game_.board()[(rank, file)].is_some() {
-            selected_.set(Some((rank, file)));
-        }
-    });
+        new.apply_unchecked(mov);
+        new.advance_turn();
+        selected_.set(None);
+        board_.set(new);
+    };
 
     html!(
         <>
         <h1>{"Play"}</h1>
-            <BoardComponent  board={game.board()} onclick={onclick} selected={*selected}/>
-            
+            <BoardComponent  board={*board} onclick={onclick} selected={*selected}/>
+            <button onclick={play}>{"Play"}</button>
+            <h2>{"heuristic:"} {board.heuristic(&Default::default())}</h2>
         </>
     )
 }

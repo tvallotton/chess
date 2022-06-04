@@ -2,11 +2,12 @@
     "settings_path": "",
     "nocapture": false,
     "recursion_limit": 10000,
-    "max_depth": 1,
+    "max_depth": 2,
     "time_limit": 10,
     "memory_limit": 2000,
     "absolute_params": {
         "turn_value": 1.0,
+        "max_depth": 2,
         "defended": 0.0,
         "attacked": 0.0,
         "available_moves": 0.00,
@@ -1013,6 +1014,7 @@
     },
     "black_params": {
         "turn_value": 1.0,
+        "max_depth": 2,
         "defended": 0.0,
         "attacked": 0.0,
         "available_moves": 0.01,
@@ -2018,6 +2020,7 @@
         }
     },
     "white_params": {
+        "max_depth": 2,
         "turn_value": 1.0,
         "defended": 0.1,
         "attacked": 0.1,

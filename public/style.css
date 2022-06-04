@@ -3,11 +3,12 @@
     width: 50px;
 }
 
-.black {
-    background-color: #999;
+.black.square {
+    background-color: rgb(145, 102, 77);
 }
-.white {
-    background-color: #eee;
+
+.white.square {
+    background-color: rgb(227, 212, 138);
 }
 
 .board-row {
@@ -19,9 +20,38 @@
     max-height: 500%;
     max-width: auto;
 }
-.selected.black.square {
-    background-color: #ccc;
+
+.piece.white {
+    color: white; 
+    font-size:xx-large;
+    
 }
+
+.highlighted.white.square {
+    background-color: #dbd7d7;
+}
+
+.highlighted.black.square {
+    background-color: #b2b2b2;
+}
+
+.selected.black.square {
+    background-color: rgb(98, 108, 107);
+}
+
 .selected.white.square {
-    background-color: #ccc;
+    background-color: rgb(156, 213, 197);
+}
+
+
+
+
+.highlighted.circle {
+    background-color: rgb(192, 200, 207);
+    position: absolute;
+    border-radius: 100%;
+    height: 15px;
+    width: 15px;
+    margin-top: 17px;
+    margin-left: 17px;
 }

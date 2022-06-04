@@ -1,7 +1,3 @@
-
-
-
-
 use yew::prelude::{function_component as component, *};
 
 use crate::piece::Piece;
@@ -27,7 +23,8 @@ pub struct Props {
     pub file: isize,
     pub piece: Option<Piece>,
     pub onclick: Callback<(isize, isize)>,
-    pub selected: Option<(isize, isize)>,
+    pub selected: bool,
+    pub highlighted: bool,
 }
 
 #[component(Square)]
@@ -39,20 +36,19 @@ pub fn square(props: &Props) -> Html {
         piece,
         onclick,
         selected,
+        highlighted,
     } = props.clone();
-    let class = if selected == Some((rank, file)) {
-        format!("square {color} selected")
-    } else {
-        format!("square {color}")
-    };
+    let selected = if selected { "selected" } else { "" };
+    let highlighted = if highlighted { "highlighted" } else { "" };
+    let class = format!("square {color} {selected} {highlighted}");
 
     let piece = piece
         .map(|piece| piece.icon())
-        .unwrap_or(html!());
-    // onclick
+        .unwrap_or_default();
+
     html!(
         <div class={class} onclick={move |_| onclick.emit((rank, file))} >
-            { piece }
+             { piece }
         </div>
     )
 }

@@ -24,5 +24,6 @@ pretty_env_logger = "0.4.0"
 yew-router = "0.16.0"
 smart-default = "0.6.0"
 arrayvec = "0.7.2"
+float-ord = "0.3.2"
 
 # WASM
