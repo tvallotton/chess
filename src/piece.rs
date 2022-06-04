@@ -45,8 +45,8 @@ impl Color {
     }
     pub fn promotion_rank(self) -> isize {
         match self {
-            Black => 0,
-            White => 7,
+            Black => 7,
+            White => 0,
         }
     }
     pub fn pawn_blocking_rank(self) -> isize {
