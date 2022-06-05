@@ -32,23 +32,23 @@ pub struct Board {
 /// Indicates whether a player can castle in either side.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Castle {
-    pub kingside: Option<()>,
-    pub queenside: Option<()>,
+    pub kingside: bool,
+    pub queenside: bool,
 }
 
 impl Default for Castle {
     fn default() -> Self {
         Castle {
-            kingside: Some(()),
-            queenside: Some(()),
+            kingside: true,
+            queenside: true,
         }
     }
 }
 impl Castle {
     fn no_castle() -> Self {
         Castle {
-            kingside: None,
-            queenside: None,
+            kingside: false,
+            queenside: false,
         }
     }
 }
@@ -120,6 +120,7 @@ impl Board {
         children
     }
     /// It computes the full heuristic.
+    /// TODO: CLEANUP
     #[inline]
     pub fn heuristic(&self, params: &Params) -> f32 {
         let mut h_white = 0.0;
@@ -152,6 +153,7 @@ impl Board {
                 }
                 _ => (),
             });
+        // MATERIAL
         self.colored_pieces(White)
             .into_iter()
             .for_each(|piece| {
@@ -168,6 +170,7 @@ impl Board {
                     black_king = 0.0;
                 }
             });
+
         h_white + white_king - h_black - black_king
     }
     /// it computes the children along with a one sided heuristic
@@ -212,19 +215,23 @@ impl Board {
     }
 
     #[inline]
-    pub fn remove_check_rights(&mut self, Move { from, to }: Move) {
-        match self.turn {
-            // if a rook moves
-            Black if from.file == 0 => self.black.queenside = None,
-            White if from.file == 0 => self.white.queenside = None,
-            Black if from.file == 7 => self.black.kingside = None,
-            White if from.file == 7 => self.white.kingside = None,
-            // if a rook gets captured
-            Black if to.file == 0 => self.black.queenside = None,
-            White if to.file == 0 => self.white.queenside = None,
-            Black if to.file == 7 => self.black.kingside = None,
-            White if to.file == 7 => self.white.kingside = None,
-            _ => (),
+    pub fn remove_castle_rights(&mut self, Move { from, to }: Move) {
+        let backrank = [0, 7].contains(&from.rank) || [0, 7].contains(&to.rank);
+
+        if backrank {
+            match self.turn {
+                // if a rook moves
+                Black if from.file == 0 => self.black.queenside = false,
+                White if from.file == 0 => self.white.queenside = false,
+                Black if from.file == 7 => self.black.kingside = false,
+                White if from.file == 7 => self.white.kingside = false,
+                // if a rook gets captured
+                Black if to.file == 0 => self.black.queenside = false,
+                White if to.file == 0 => self.white.queenside = false,
+                Black if to.file == 7 => self.black.kingside = false,
+                White if to.file == 7 => self.white.kingside = false,
+                _ => (),
+            }
         }
     }
 
@@ -265,7 +272,7 @@ impl Board {
             Some(King) => self.apply_king_move(piece, mov),
             None => unreachable!("{mov:?}"),
         }
-        self.remove_check_rights(mov);
+        self.remove_castle_rights(mov);
     }
 
     pub fn apply(&self, mov: Move) -> Board {
@@ -476,31 +483,36 @@ impl Board {
             .chain(self.relative(pos, color, -1, 1))
             .chain(self.relative(pos, color, -1, -1))
     }
-    fn king_castle_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Move> {
-        let castle = match self.turn {
+    fn castle(&self, color: Color) -> Castle {
+        match color {
             Black => self.black,
             White => self.white,
-        };
-        let kingside = castle.kingside.and_then(|_| {
-            let is_clear =
-                self[(0, 1)].is_none() && self[(0, 2)].is_none() && self[(0, 3)].is_none();
+        }
+    }
+
+    fn king_castle_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Move> {
+        let castle = self.castle(self.turn);
+        let rank = pos.rank;
+        let kingside = {
+            let is_clear = castle.queenside
+                && self[(rank, 1)].is_none()
+                && self[(rank, 2)].is_none()
+                && self[(rank, 3)].is_none();
             if is_clear {
-                return Some(self.relative(pos, color, 0, -3));
-            }
-            None
-        });
-        castle
-            .queenside
-            .and_then(|_| {
-                let is_clear = self[(0, 5)].is_none() && self[(0, 6)].is_none();
-                if is_clear {
-                    return Some(self.relative(pos, color, 0, 2));
-                }
+                self.relative(pos, color, 0, -3)
+            } else {
                 None
-            })
-            .into_iter()
-            .chain(kingside)
-            .flatten()
+            }
+        };
+
+        let is_clear = castle.kingside && self[(rank, 5)].is_none() && self[(rank, 6)].is_none();
+        if is_clear {
+            self.relative(pos, color, 0, 2)
+                .into_iter()
+                .chain(kingside)
+        } else {
+            None.into_iter().chain(None)
+        }
     }
 
     /// # Pawns

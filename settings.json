@@ -8,25 +8,16 @@
     "absolute_params": {
         "turn_value": 1.0,
         "max_depth": 2,
-        "defended": 0.0,
-        "attacked": 0.0,
-        "available_moves": 0.00,
+        "defended": 0.02,
+        "attacked": 0.05,
+        "available_moves": 0.001,
         "piece_value": 1,
-        "mov_value": 0,
+        "mov_value": 0.02,
         "kingside_castle": 0.0,
         "queenside_castle": 0.0,
         "pawn": {
             "white": [
-                [
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0
-                ],
+                [ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ],
                 [
                     1.0,
                     1.0,
