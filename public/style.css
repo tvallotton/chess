@@ -19,6 +19,7 @@
 .piece-icon {
     max-height: 500%;
     max-width: auto;
+    overflow: hidden;
 }
 
 .piece.white {

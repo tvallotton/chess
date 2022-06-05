@@ -44,7 +44,11 @@ pub fn square(props: &Props) -> Html {
 
     let piece = piece
         .map(|piece| piece.icon())
-        .unwrap_or_default();
+        .unwrap_or_else(|| {
+            html!(
+                <img class="piece-icon" src="/public/none.svg" />
+            )
+        });
 
     html!(
         <div class={class} onclick={move |_| onclick.emit((rank, file))} >
