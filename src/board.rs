@@ -6,6 +6,7 @@ use crate::{
 use arrayvec::ArrayVec;
 
 use float_ord::FloatOrd;
+use itertools::Itertools;
 use tap::prelude::*;
 use yew::Properties;
 use Color::*;
@@ -270,17 +271,16 @@ impl Board {
         self.remove_castle_rights(mov);
     }
 
-    pub fn apply(&self, mov: Move) -> Board {
-        let mut board = *self;
-        let piece = board[mov.from].take();
-
-        board[mov.to] = piece;
-        if [0, 7].contains(&mov.to.rank) {
-            if let Piece { kind: Pawn, color } = board[mov.to].unwrap() {
-                board[mov.to] = Some(Piece { kind: Queen, color });
-            }
+    pub fn apply(&mut self, mov: Move) -> Result<(), ()> {
+        let is_valid = self
+            .plays_for_piece(mov.from)
+            .contains(&mov);
+        if is_valid {
+            self.apply_unchecked(mov);
+            Ok(())
+        } else {
+            Err(())
         }
-        board
     }
     #[allow(const_item_mutation)]
     pub fn play_with(&self, params: &Params) -> Option<Move> {

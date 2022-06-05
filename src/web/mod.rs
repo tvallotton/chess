@@ -1,14 +1,14 @@
-use std::fmt::Debug;
 
 use crate::board::Board as Props;
 use board::Board;
 use play::Play;
 use yew::prelude::{function_component as component, *};
 use yew_router::prelude::*;
+use debug::Debug; 
 
 mod board;
 mod play;
-
+mod debug; 
 mod menu;
 mod square;
 
@@ -24,8 +24,9 @@ enum Route {
 
 fn switch(route: &Route) -> Html {
     match route {
-        Route::Home => html!(<Board board={Props::default()} onclick={Callback::noop()}  />),
+        Route::Home => html!(<Play />),
         Route::Play => html!(<Play />),
+        Route::Debug => html!(<Debug />), 
         _ => html!(),
     }
 }

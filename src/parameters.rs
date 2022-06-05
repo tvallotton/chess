@@ -1,10 +1,10 @@
 use crate::{
-    game::Game,
     moves::{Move, Position},
-    piece::{Color, Kind, Piece},
+    piece::{Color, Kind, Piece}, opt::Settings,
 };
 
 use serde::{Deserialize, Serialize};
+use tap::Pipe;
 
 use std::{ops::Index, str::FromStr};
 
@@ -61,7 +61,10 @@ impl Params {
 
 impl Default for Params {
     fn default() -> Self {
-        Game::new().opt.absolute_params
+        let settings: Settings = include_str!("../settings.json")
+            .pipe(serde_json::from_str)
+            .unwrap();
+        settings.absolute_params
     }
 }
 

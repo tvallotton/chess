@@ -2,12 +2,11 @@
 #![doc = include_str!("../readme.md")]
 #![allow(dead_code)]
 #![warn(unused_crate_dependencies)]
-use game::Game;
+
 
 mod board;
 mod cli;
-mod game;
-mod minimax;
+
 mod moves;
 mod opt;
 mod parameters;
