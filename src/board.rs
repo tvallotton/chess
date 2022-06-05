@@ -272,10 +272,16 @@ impl Board {
     }
 
     pub fn apply(&mut self, mov: Move) -> Result<(), ()> {
+        let correct_turn = {
+            match self[mov.from] {
+                Some(piece) => piece.color == self.turn,
+                _ => false,
+            }
+        };
         let is_valid = self
             .plays_for_piece(mov.from)
             .contains(&mov);
-        if is_valid {
+        if correct_turn && is_valid {
             self.apply_unchecked(mov);
             Ok(())
         } else {
@@ -284,7 +290,7 @@ impl Board {
     }
     #[allow(const_item_mutation)]
     pub fn play_with(&self, params: &Params) -> Option<Move> {
-        log::info!("{:?}", self.children_moves());
+        
         let moves = self
             .children_moves()
             .into_iter();

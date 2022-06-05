@@ -4,11 +4,11 @@
 }
 
 .black.square {
-    background-color: rgb(145, 102, 77);
+    background-color: rgb(177, 177, 177);
 }
 
 .white.square {
-    background-color: rgb(227, 212, 138);
+    background-color: rgb(255, 255, 255);
 }
 
 .board-row {
@@ -32,7 +32,7 @@
 }
 
 .highlighted.black.square {
-    background-color: #b2b2b2;
+    background-color: rgb(197, 197, 197);
 }
 
 .selected.black.square {

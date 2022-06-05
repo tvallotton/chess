@@ -1,4 +1,3 @@
-#![feature(binary_heap_retain)]
 #![doc = include_str!("../readme.md")]
 #![allow(dead_code)]
 #![warn(unused_crate_dependencies)]

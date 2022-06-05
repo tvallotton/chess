@@ -1,7 +1,8 @@
-use std::{fmt::Display, ops::BitOr};
+use std::{fmt::Display, ops::BitOr, str::FromStr};
 
 pub use Color::*;
 pub use Kind::*;
+use serde::Deserialize;
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Piece {
     pub kind: Kind,
@@ -17,7 +18,8 @@ pub enum Kind {
     Queen,
     King,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
+#[serde(rename_all= "lowercase")]
 pub enum Color {
     Black,
     White,
@@ -33,6 +35,19 @@ impl BitOr<Kind> for Color {
     type Output = Piece;
     fn bitor(self, kind: Kind) -> Self::Output {
         Piece { kind, color: self }
+    }
+}
+
+impl FromStr for Color {
+    type Err = &'static str;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.eq_ignore_ascii_case("white") {
+            Ok(White)
+        } else if s.eq_ignore_ascii_case("black") {
+            Ok(Black)
+        } else {
+            Err("not a valid player")
+        }
     }
 }
 
