@@ -4,11 +4,11 @@
 }
 
 .black.square {
-    background-color: rgb(177, 177, 177);
+    background-color: rgb(165, 165, 165);
 }
 
 .white.square {
-    background-color: rgb(255, 255, 255);
+    background-color: rgb(233, 233, 233);
 }
 
 .board-row {
@@ -28,19 +28,20 @@
 }
 
 .highlighted.white.square {
-    background-color: #dbd7d7;
+    background-color: #e2c9c9;
 }
 
 .highlighted.black.square {
-    background-color: rgb(197, 197, 197);
+    background-color: #c3b0b0
 }
 
 .selected.black.square {
-    background-color: rgb(98, 108, 107);
+    background-color: rgb(255, 255, 255);
 }
 
 .selected.white.square {
-    background-color: rgb(156, 213, 197);
+    background-color: rgb(255, 255, 255);
+    
 }
 
 
