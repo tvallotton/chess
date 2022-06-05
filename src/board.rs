@@ -265,12 +265,18 @@ impl Board {
         let piece = self[from].take();
 
         match piece.map(|x| x.kind) {
-            Some(Queen | Bishop | Knight | Rook) => self[to] = piece,
             Some(Pawn) => self.apply_pawn_move(piece, mov),
-
-            Some(King) => self.apply_king_move(piece, mov),
+            Some(Queen | Bishop | Knight | Rook) => {
+                self[to] = piece;
+                self.passant = None;
+            }
+            Some(King) => {
+                self.apply_king_move(piece, mov);
+                self.passant = None;
+            }
             None => unreachable!("{mov:?}"),
         }
+
         self.remove_castle_rights(mov);
     }
 

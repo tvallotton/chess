@@ -1,6 +1,7 @@
 use crate::{
     moves::{Move, Position},
-    piece::{Color, Kind, Piece}, opt::Settings,
+    opt::Settings,
+    piece::{Color, Kind, Piece},
 };
 
 use serde::{Deserialize, Serialize};
@@ -61,10 +62,13 @@ impl Params {
 
 impl Default for Params {
     fn default() -> Self {
-        let settings: Settings = include_str!("../settings.json")
+        // let settings: Settings = include_str!("../settings.json")
+        //     .pipe(serde_json::from_str)
+        //     .unwrap();
+        // settings.absolute_params
+        include_str!("../params.json")
             .pipe(serde_json::from_str)
-            .unwrap();
-        settings.absolute_params
+            .unwrap()
     }
 }
 
