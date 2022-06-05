@@ -21,7 +21,7 @@ pub fn color(rank: isize, file: isize) -> &'static str {
 fn highlighted(board: &BoardProps, selected: Option<(isize, isize)>) -> Vec<(isize, isize)> {
     if let Some(pos) = selected {
         board
-            .plays_for_piece(pos.into())
+            .highlighted_squares(pos.into())
             .map(|mv| mv.to)
             .map(|pos| (pos.rank, pos.file))
             .collect()

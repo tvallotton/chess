@@ -1,15 +1,11 @@
 use std::ops::Deref;
 
 use super::Board as BoardComponent;
-use crate::board;
+
 use crate::moves::Move;
 use crate::{board::Board, piece::Color};
 
-use serde::Deserialize;
-use serde_json::Value;
 use yew::prelude::{function_component as component, UseStateHandle as U, *};
-use yew_router::history::Location;
-use yew_router::hooks::use_location;
 
 type History = U<Vec<Board>>;
 type Selected = U<Option<(isize, isize)>>;
@@ -68,7 +64,6 @@ pub struct Props {
 
 #[component(Play)]
 pub fn play(Props { play_as }: &Props) -> Html {
-    
     let history = use_state(|| vec![Board::default()]);
     let board = history
         .last()
@@ -86,6 +81,10 @@ pub fn play(Props { play_as }: &Props) -> Html {
         hist.pop();
         history.set(hist);
     };
+    let check = board
+        .check()
+        .map(|x| x.to_string())
+        .unwrap_or_default();
 
     html!(
         <>
@@ -95,6 +94,7 @@ pub fn play(Props { play_as }: &Props) -> Html {
             <button onclick={undo}> {"Undo"}</button>
             <p><b>{"turn: "}</b> {board.turn}</p>
             <p><b>{"heuristic: "}</b> {board.heuristic(&Default::default())}</p>
+            <p><b>{"check: "}</b> {check}</p>
         </>
     )
 }

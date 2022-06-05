@@ -1,3 +1,5 @@
+use core::panic;
+
 use crate::{
     moves::{Move, Position},
     parameters::Params,
@@ -271,7 +273,7 @@ impl Board {
         }
         self.remove_castle_rights(mov);
     }
-    
+
     pub fn apply(&mut self, mov: Move) -> Result<(), ()> {
         let correct_turn = {
             match self[mov.from] {
@@ -282,63 +284,92 @@ impl Board {
         let is_valid = self
             .plays_for_piece(mov.from)
             .contains(&mov);
-        if correct_turn && is_valid {
+        let castle = self.check_castle(mov);
+
+        if correct_turn && is_valid && castle {
             self.apply_unchecked(mov);
             Ok(())
         } else {
             Err(())
         }
     }
-    /// TODO: implement more efficiently
-    pub fn winner(&self) -> Option<Color> {
-        let params = Params::default();
-        if let Some(mov) = self.play_with(&params) {
-            let mut board = *self;
-            board.apply(mov).ok();
-            let h = board.heuristic(&params);
-            if h == f32::NEG_INFINITY {
-                Some(Black)
-            } else if h == f32::INFINITY {
-                Some(White)
-            } else {
-                None
+
+    fn find_king(&self, color: Color) -> Position {
+        for i in 0..8 {
+            for j in 0..8 {
+                if let Some(piece) = self[(i, j)] {
+                    if piece.color == color {
+                        return (i, j).into();
+                    }
+                }
             }
+        }
+        panic!("No king was found");
+    }
+
+    fn is_check(&self, color: Color) -> bool {
+        let king = self.find_king(color);
+        self.moves_for(color.opposite())
+            .any(|mv| mv.to == king)
+    }
+    pub fn check(&self) -> Option<Color> {
+        if self.is_check(White) {
+            Some(White)
+        } else if self.is_check(Black) {
+            Some(Black)
         } else {
-            Some(self.turn.opposite())
+            None
         }
     }
-    fn is_in_check(&self, color: Color) -> bool {
-        let mut board = *self;
-        board.turn = color.opposite();
 
-        board.play_with(&Params::default());
-        return board.winner().is_some();
-    }
-    #[allow(const_item_mutation)]
+    // TODO: cleanup
     pub fn play_with(&self, params: &Params) -> Option<Move> {
         let moves = self
             .children_moves()
             .into_iter();
-
-        if self.turn == White {
-            let (_, mov) = moves.max_by_key(|(child, _)| {
-                {
-                    child
-                        .minimax(params, params.max_depth, f32::NEG_INFINITY, f32::INFINITY)
-                        .pipe(FloatOrd)
-                }
-            })?;
-            Some(mov)
+        let mut sorted: ArrayVec<_, 128> = ArrayVec::from_iter(moves);
+        sorted.sort_by_key(|(child, _)| {
+            child
+                .minimax(params, params.max_depth, f32::NEG_INFINITY, f32::INFINITY)
+                .pipe(FloatOrd)
+        });
+        let (first, second) = {
+            if self.turn == White {
+                (sorted.last()?.1, sorted.get(sorted.len() - 2))
+            } else {
+                (sorted.first()?.1, sorted.get(1))
+            }
+        };
+        if self.check_castle(first) {
+            Some(first)
         } else {
-            let (_, mov) = moves.min_by_key(|(child, _)| {
-                {
-                    child
-                        .minimax(params, params.max_depth, f32::NEG_INFINITY, f32::INFINITY)
-                        .pipe(FloatOrd)
-                }
-            })?;
-            Some(mov)
+            Some(second?.1)
         }
+    }
+
+    fn check_castle(&self, mov: Move) -> bool {
+        let is_king = self[mov.from]
+            .map(|x| x.kind == King)
+            .unwrap_or(false);
+        let is_long = (mov.from.file - mov.to.file).abs() > 1;
+        log::info!("is_king {is_king}");
+        log::info!("is_long {is_long}");
+        if is_king && is_long {
+            let range = mov.from.file..(mov.to.file + 1);
+            let pos = range
+                .into_iter()
+                .map(|file| (mov.from.rank, file))
+                .map(|pos| pos.into())
+                .pipe(ArrayVec::from_iter);
+            !self.is_any_attacked(&pos, self.turn.opposite())
+        } else {
+            true
+        }
+    }
+
+    fn is_any_attacked(&self, pos: &ArrayVec<Position, 3>, by: Color) -> bool {
+        self.moves_for(by)
+            .any(|mv| pos.contains(&mv.to))
     }
 
     fn minimax(&self, params: &Params, depth: i32, mut alpha: f32, mut beta: f32) -> f32 {
@@ -399,6 +430,11 @@ impl Board {
             .map(|(_, pos)| pos)
             .flat_map(|pos| self.plays_for_piece(pos))
     }
+    pub fn highlighted_squares(&self, pos: Position) -> impl Iterator<Item = Move> + '_ {
+        self.plays_for_piece(pos)
+            .filter(|&mv| self.check_castle(mv))
+    }
+
     pub fn moves_for(&self, player: Color) -> impl Iterator<Item = Move> + '_ {
         self.colored_pieces(player)
             .map(|(_, pos)| pos)
@@ -531,7 +567,8 @@ impl Board {
                 .into_iter()
                 .chain(queenside)
         } else {
-            None.into_iter().chain(queenside)
+            None.into_iter()
+                .chain(queenside)
         }
     }
 
