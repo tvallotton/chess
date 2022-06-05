@@ -45,7 +45,7 @@ impl Params {
                         .powi(2))
     }
     pub fn mov(&self, piece: Piece, mov: Move) -> f32 {
-        self.mov_value * self.value((piece, mov.to))
+        self.mov_value / self.value((piece, mov.to))
     }
     pub fn value(&self, tuple: (Piece, Position)) -> f32 {
         let index = (tuple.1, tuple.0.color);

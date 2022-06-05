@@ -183,13 +183,12 @@ impl Board {
             let mut child = *self;
             child.apply_unchecked(mv);
             children.push(child);
+            h += params.available_moves;
             match self[mv.to] {
                 Some(capt) if capt.color != self.turn => {
                     self.h_capture(&mut h, params, capt, mv);
                 }
-                None => {
-                    self.h_move(&mut h, params, mv);
-                }
+                None => {}
                 Some(def) => {
                     self.h_defend(&mut h, params, def, mv);
                 }
@@ -200,17 +199,17 @@ impl Board {
     #[inline]
     fn h_defend(&self, h: &mut f32, params: &Params, def: Piece, mv: Move) {
         let by = self[mv.from].unwrap();
-        *h = params.defended(def, by, mv);
+        *h += params.defended(def, by, mv);
     }
     #[inline]
     fn h_move(&self, h: &mut f32, params: &Params, mov: Move) {
         let piece = self[mov.from].unwrap();
-        *h = params.mov(piece, mov);
+        *h += params.mov(piece, mov);
     }
     #[inline]
     fn h_capture(&self, h: &mut f32, params: &Params, capt: Piece, mv: Move) {
         let by = self[mv.from].unwrap();
-        *h = params.attacked(capt, by, mv);
+        *h += params.attacked(capt, by, mv);
     }
 
     #[inline]
