@@ -1,6 +1,7 @@
 use std::ops::Deref;
 
 use super::Board as BoardComponent;
+use crate::board;
 use crate::moves::Move;
 use crate::{board::Board, piece::Color};
 
@@ -62,12 +63,12 @@ fn play(board: Board, hist: &History, selected: &Selected) -> impl Fn(MouseEvent
 }
 #[derive(PartialEq, Clone, Properties)]
 pub struct Props {
-   pub play_as: Color,
+    pub play_as: Color,
 }
 
 #[component(Play)]
 pub fn play(Props { play_as }: &Props) -> Html {
-    log::info!("{play_as}");
+    
     let history = use_state(|| vec![Board::default()]);
     let board = history
         .last()
@@ -91,8 +92,8 @@ pub fn play(Props { play_as }: &Props) -> Html {
         <h1>{"Playing as "} {play_as}</h1>
             <BoardComponent  board={board} onclick={onclick} selected={*selected}/>
             <button onclick={play}>{"Play"}</button>
-            <button onclick={undo}> {"Undo"}</button>   
-            <p><b>{"turn: "}</b> {board.turn}</p>        
+            <button onclick={undo}> {"Undo"}</button>
+            <p><b>{"turn: "}</b> {board.turn}</p>
             <p><b>{"heuristic: "}</b> {board.heuristic(&Default::default())}</p>
         </>
     )

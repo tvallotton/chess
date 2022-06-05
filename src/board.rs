@@ -159,6 +159,7 @@ impl Board {
                     white_king = 0.0;
                 }
             });
+
         self.colored_pieces(Black)
             .into_iter()
             .for_each(|piece| {
@@ -288,9 +289,33 @@ impl Board {
             Err(())
         }
     }
+    /// TODO: implement more efficiently
+    pub fn winner(&self) -> Option<Color> {
+        let params = Params::default();
+        if let Some(mov) = self.play_with(&params) {
+            let mut board = *self;
+            board.apply(mov).ok();
+            let h = board.heuristic(&params);
+            if h == f32::NEG_INFINITY {
+                Some(Black)
+            } else if h == f32::INFINITY {
+                Some(White)
+            } else {
+                None
+            }
+        } else {
+            Some(self.turn.opposite())
+        }
+    }
+    fn is_in_check(&self, color: Color) -> bool {
+        let mut board = *self;
+        board.turn = color.opposite();
+
+        board.play_with(&Params::default());
+        return board.winner().is_some();
+    }
     #[allow(const_item_mutation)]
     pub fn play_with(&self, params: &Params) -> Option<Move> {
-        
         let moves = self
             .children_moves()
             .into_iter();
@@ -521,6 +546,7 @@ impl Board {
     fn pawn_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Move> {
         self.capture_only(pos, color, color.pawn_dir(), 1)
             .into_iter()
+            .chain(self.pawn_passant(pos, color))
             .chain(self.capture_only(pos, color, color.pawn_dir(), -1))
             .chain(self.moves_only(pos, color, color.pawn_dir(), 0))
             .chain({
@@ -532,6 +558,20 @@ impl Board {
                     None
                 }
             })
+    }
+
+    fn pawn_passant(&self, pos: Position, color: Color) -> Option<Move> {
+        if let Some(passant) = self.passant {
+            let is_file = (passant.file - pos.file).abs() == 1;
+            let is_rank = passant.rank == pos.rank;
+            if is_file && is_rank {
+                return Some(Move {
+                    from: pos,
+                    to: (pos.rank + color.pawn_dir(), passant.file).into(),
+                });
+            }
+        }
+        None
     }
 
     fn knight_moves(&'_ self, pos: Position, color: Color) -> impl Iterator<Item = Move> {

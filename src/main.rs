@@ -17,7 +17,6 @@ mod web;
 fn main() {
     #[cfg(target_family = "wasm")]
     wasm_logger::init(Default::default());
-    log::info!("wasm");
     #[cfg(target_family = "wasm")]
     web::main();
     
