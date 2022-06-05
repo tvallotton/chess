@@ -1,7 +1,7 @@
 use super::Board as BoardComponent;
 use crate::board::Board;
-use crate::moves::{Move, Position};
-use crate::piece::Color;
+use crate::moves::{Move};
+
 use yew::prelude::{function_component as component, UseStateHandle as U, *};
 
 fn onclick(board: &U<Board>, selected: &U<Option<(isize, isize)>>) -> Callback<(isize, isize)> {
@@ -25,7 +25,7 @@ fn onclick(board: &U<Board>, selected: &U<Option<(isize, isize)>>) -> Callback<(
     })
 }
 
-fn play(board: &Board) -> impl FnMut(MouseEvent)  {
+fn play(_board: &Board) -> impl FnMut(MouseEvent)  {
     
     |_| {
 
@@ -37,8 +37,8 @@ pub fn play() -> Html {
     let board = use_state(Board::default);
     let selected = use_state(|| None);
 
-    let selected_ = selected.clone();
-    let board_ = board.clone();
+    let _selected_ = selected.clone();
+    let _board_ = board.clone();
 
     let onclick = onclick(&board, &selected);
 

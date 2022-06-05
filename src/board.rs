@@ -1,5 +1,3 @@
-use std::f32::INFINITY;
-
 use crate::{
     moves::{Move, Position},
     parameters::Params,
@@ -138,7 +136,6 @@ impl Board {
                 Some(def) => {
                     self.h_defend(&mut h_white, params, def, mv);
                 }
-                _ => (),
             });
         self.moves_for(Black)
             .for_each(|mv| match self[mv.to] {
@@ -151,7 +148,6 @@ impl Board {
                 Some(def) => {
                     self.h_defend(&mut h_black, params, def, mv);
                 }
-                _ => (),
             });
         // MATERIAL
         self.colored_pieces(White)
@@ -193,7 +189,6 @@ impl Board {
                 Some(def) => {
                     self.h_defend(&mut h, params, def, mv);
                 }
-                _ => (),
             }
         });
         (h, children)
@@ -236,7 +231,7 @@ impl Board {
     }
 
     #[inline]
-    pub fn apply_pawn_move(&mut self, mut piece: Option<Piece>, Move { from, mut to }: Move) {
+    pub fn apply_pawn_move(&mut self, mut piece: Option<Piece>, Move { from, to }: Move) {
         // if we do a two square move we are vulnerable to
         // the passant rule
         if from.rank + 2 == to.rank {
@@ -296,22 +291,20 @@ impl Board {
 
         if self.turn == White {
             let (_, mov) = moves.max_by_key(|(child, _)| {
-                let out = {
+                {
                     child
                         .minimax(params, params.max_depth, f32::NEG_INFINITY, f32::INFINITY)
                         .pipe(FloatOrd)
-                };
-                out
+                }
             })?;
             Some(mov)
         } else {
             let (_, mov) = moves.min_by_key(|(child, _)| {
-                let out = {
+                {
                     child
                         .minimax(params, params.max_depth, f32::NEG_INFINITY, f32::INFINITY)
                         .pipe(FloatOrd)
-                };
-                out
+                }
             })?;
             Some(mov)
         }
@@ -319,7 +312,7 @@ impl Board {
 
     fn minimax(&self, params: &Params, depth: i32, mut alpha: f32, mut beta: f32) -> f32 {
         if depth == 0 {
-            return self.heuristic(params);
+            self.heuristic(params)
         } else if let White = self.turn {
             let mut max = f32::NEG_INFINITY;
             self.children()
@@ -328,11 +321,9 @@ impl Board {
                     let score = child.minimax(params, depth - 1, alpha, beta);
                     max = max.max(score);
                     alpha = alpha.max(score);
-                    if beta <= alpha {
-                        return;
-                    }
+                    if beta <= alpha {}
                 });
-            return alpha;
+            alpha
         } else {
             let mut min = f32::INFINITY;
             self.children()
@@ -341,11 +332,9 @@ impl Board {
                     let score = child.minimax(params, depth - 1, alpha, beta);
                     min = min.min(score);
                     beta = beta.min(score);
-                    if beta <= alpha {
-                        return;
-                    }
+                    if beta <= alpha {}
                 });
-            return beta;
+            beta
         }
     }
 

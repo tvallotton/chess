@@ -35,7 +35,7 @@ impl Params {
         self.attacked * self.value((attacked, mov.to)) / (1.0 + self.value((by, mov.from)))
     }
 
-    pub fn defended(&self, defended: Piece, by: Piece, Move { to, from }: Move) -> f32 {
+    pub fn defended(&self, defended: Piece, by: Piece, Move { to: _, from }: Move) -> f32 {
         self.defended * 1.0
             / (1.0
                 + self.value((by, from))
@@ -61,7 +61,7 @@ impl Params {
 
 impl Default for Params {
     fn default() -> Self {
-        Game::new().opt.absolute_params.clone()
+        Game::new().opt.absolute_params
     }
 }
 

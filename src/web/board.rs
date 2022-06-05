@@ -1,5 +1,5 @@
 use super::square::Square;
-use crate::{board::Board as BoardProps, moves::Position, opt::Opt};
+use crate::{board::Board as BoardProps};
 
 use yew::prelude::{function_component as component, *};
 
@@ -40,7 +40,7 @@ pub fn board(
     }: &Props,
 ) -> Html {
     let mut total = html!();
-    let ref highlighted = highlighted(board, *selected);
+    let highlighted = &highlighted(board, *selected);
     for rank in 0..8 {
         let mut row = html!();
         for file in 0..8 {
