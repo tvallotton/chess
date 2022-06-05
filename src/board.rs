@@ -513,7 +513,7 @@ impl Board {
     fn king_castle_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Move> {
         let castle = self.castle(self.turn);
         let rank = pos.rank;
-        let kingside = {
+        let queenside = {
             let is_clear = castle.queenside
                 && self[(rank, 1)].is_none()
                 && self[(rank, 2)].is_none()
@@ -529,9 +529,9 @@ impl Board {
         if is_clear {
             self.relative(pos, color, 0, 2)
                 .into_iter()
-                .chain(kingside)
+                .chain(queenside)
         } else {
-            None.into_iter().chain(None)
+            None.into_iter().chain(queenside)
         }
     }
 
