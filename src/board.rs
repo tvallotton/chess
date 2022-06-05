@@ -271,7 +271,7 @@ impl Board {
         }
         self.remove_castle_rights(mov);
     }
-
+    
     pub fn apply(&mut self, mov: Move) -> Result<(), ()> {
         let correct_turn = {
             match self[mov.from] {

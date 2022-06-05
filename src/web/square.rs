@@ -46,7 +46,7 @@ pub fn square(props: &Props) -> Html {
         .map(|piece| piece.icon())
         .unwrap_or_else(|| {
             html!(
-                <img class="piece-icon" src="/public/none.svg" />
+                <img class="piece-icon" src="/public/none.png" />
             )
         });
 
