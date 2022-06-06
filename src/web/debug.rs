@@ -55,13 +55,16 @@ pub fn debug() -> Html {
         selected_.set(None);
         board_.set(new);
     };
+    
 
+    
     html!(
         <>
         <h1>{"Play"}</h1>
             <BoardComponent  board={*board} onclick={onclick} selected={*selected}/>
             <button onclick={play}>{"Play"}</button>
             <h2>{"heuristic:"} {board.heuristic(&Default::default())}</h2>
+            
         </>
     )
 }

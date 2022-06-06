@@ -85,7 +85,18 @@ pub fn play(Props { play_as }: &Props) -> Html {
         .check()
         .map(|x| x.to_string())
         .unwrap_or_default();
-
+    let print_moves = move |_| {
+        board
+            .colored_pieces(board.turn)
+            .map(|(piece, pos)| {
+                board
+                    .moves_for_piece(pos)
+                    .for_each(|mv| {
+                        log::debug!("mv: {mv:?} {piece:?}");
+                    })
+            })
+            .for_each(|_| {});
+    };
     html!(
         <>
         <h1>{"Playing as "} {play_as}</h1>
@@ -95,6 +106,7 @@ pub fn play(Props { play_as }: &Props) -> Html {
             <p><b>{"turn: "}</b> {board.turn}</p>
             <p><b>{"heuristic: "}</b> {board.heuristic(&Default::default())}</p>
             <p><b>{"check: "}</b> {check}</p>
+            <button onclick={print_moves}>{"Print moves"}</button>
         </>
     )
 }

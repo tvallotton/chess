@@ -54,9 +54,6 @@ impl Castle {
     }
 }
 
-fn cast<'a, T: Iterator<Item = Position> + 'a>(obj: T) -> Box<dyn Iterator<Item = Position> + 'a> {
-    Box::new(obj) as Box<dyn Iterator<Item = Position>>
-}
 type Positions<'a> = Box<dyn Iterator<Item = Position> + 'a>;
 // #[thiserror]
 // enum MoveError {
@@ -79,16 +76,15 @@ impl Board {
     /// This functions apply a king move. It will assume
     /// a castle move is being performed if the king
     /// jumps more that one square. Invalid king moves are
-    /// cause undefined behavior.
+    /// cause of undefined behavior.
     #[inline]
     fn apply_king_move(&mut self, piece: Option<Piece>, Move { from, to }: Move) {
         let dir = to.file - from.file;
         if dir.abs() > 1 {
             let (from_file, to_file) = if dir.is_negative() { (0, 2) } else { (7, 5) };
-            self.apply_unchecked(Move {
-                from: (from.rank, from_file).into(),
-                to: (to.rank, to_file).into(),
-            });
+            let from_rank = from.rank;
+            let rook = self[(from_rank, from_file)].take();
+            self[(from_rank, to_file)] = rook;
         }
         self[to] = piece;
         match self.turn {
@@ -129,40 +125,41 @@ impl Board {
         let mut white_king = f32::NEG_INFINITY;
         let mut black_king = f32::NEG_INFINITY;
         self.unfiltered_moves_for(White)
-            .for_each(|mv| {
-                match self[mv.to] {
-                    Some(capt) if capt.color != self.turn => {
-                        self.h_capture(&mut h_white, params, capt, mv);
-                    }
-                    None => {
-                        self.h_move(&mut h_white, params, mv);
-                    }
-                    Some(def) => {
-                        self.h_defend(&mut h_white, params, def, mv);
-                    }
-                };
-                h_white += params.available_moves;
+            .for_each(|mv| match self[mv.to] {
+                Some(capt) if capt.color == Black => {
+                    self.h_capture(&mut h_white, params, capt, mv);
+                    h_white += params.available_moves;
+                }
+                None => {
+                    self.h_move(&mut h_white, params, mv);
+                    h_white += params.available_moves;
+                }
+                Some(def) => {
+                    self.h_defend(&mut h_white, params, def, mv);
+                }
             });
         self.unfiltered_moves_for(Black)
             .for_each(|mv| {
                 match self[mv.to] {
-                    Some(capt) if capt.color != self.turn => {
+                    Some(capt) if capt.color == White => {
                         self.h_capture(&mut h_black, params, capt, mv);
+                        h_black += params.available_moves;
                     }
                     None => {
                         self.h_move(&mut h_black, params, mv);
+                        h_black += params.available_moves;
                     }
                     Some(def) => {
                         self.h_defend(&mut h_black, params, def, mv);
                     }
                 };
-                h_black += params.available_moves;
             });
         // MATERIAL
         self.colored_pieces(White)
             .into_iter()
             .for_each(|piece| {
                 h_white += params.piece_value(piece);
+
                 if piece.0.kind == King {
                     white_king = 0.0;
                 }
@@ -171,12 +168,12 @@ impl Board {
         self.colored_pieces(Black)
             .into_iter()
             .for_each(|piece| {
-                h_black += params.value(piece);
+                h_black += params.piece_value(piece);
+
                 if piece.0.kind == King {
                     black_king = 0.0;
                 }
             });
-
         h_white + white_king - h_black - black_king
     }
     /// it computes the children along with a one sided heuristic
@@ -238,11 +235,6 @@ impl Board {
 
     #[inline]
     pub fn apply_pawn_move(&mut self, mut piece: Option<Piece>, Move { from, to }: Move) {
-        // if we do a two square move we are vulnerable to
-        // the passant rule
-        if from.rank + 2 == to.rank {
-            self.passant = Some(to);
-        }
         // if to piece was taken in a diagonal move
         // this implies that a en passant pawn was captured
         // When moving straight this does nothing.
@@ -257,6 +249,13 @@ impl Board {
         }
 
         self[to] = piece;
+        // if we do a two square move we are vulnerable to
+        // the passant rule
+        if from.rank + 2 == to.rank {
+            self.passant = Some(to);
+        } else {
+            self.passant = None;
+        }
     }
     /// This function performs no checks at all.  
     /// This is intended for fast computations.
@@ -276,7 +275,23 @@ impl Board {
                 self.apply_king_move(piece, mov);
                 self.passant = None;
             }
-            None => unreachable!("{mov:?}"),
+            None => {
+                self.colored_pieces(self.turn)
+                    .map(|(piece, pos)| {
+                        self.moves_for_piece(pos)
+                            .for_each(|mv| {
+                                log::debug!("mv: {mv:?} {piece:?}");
+                                if mv == mov {
+                                    log::error!(
+                                        "Bug on impl for {:?}, got invalid move {mv:?}.",
+                                        piece.kind
+                                    )
+                                }
+                            })
+                    })
+                    .for_each(|_| {});
+                unreachable!("{self}\n{mov:?}")
+            }
         }
 
         self.remove_castle_rights(mov);
