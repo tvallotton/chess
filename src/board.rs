@@ -128,35 +128,41 @@ impl Board {
         let mut h_black = 0.0;
         let mut white_king = f32::NEG_INFINITY;
         let mut black_king = f32::NEG_INFINITY;
-        self.moves_for(White)
-            .for_each(|mv| match self[mv.to] {
-                Some(capt) if capt.color != self.turn => {
-                    self.h_capture(&mut h_white, params, capt, mv);
-                }
-                None => {
-                    self.h_move(&mut h_white, params, mv);
-                }
-                Some(def) => {
-                    self.h_defend(&mut h_white, params, def, mv);
-                }
+        self.unfiltered_moves_for(White)
+            .for_each(|mv| {
+                match self[mv.to] {
+                    Some(capt) if capt.color != self.turn => {
+                        self.h_capture(&mut h_white, params, capt, mv);
+                    }
+                    None => {
+                        self.h_move(&mut h_white, params, mv);
+                    }
+                    Some(def) => {
+                        self.h_defend(&mut h_white, params, def, mv);
+                    }
+                };
+                h_white += params.available_moves;
             });
-        self.moves_for(Black)
-            .for_each(|mv| match self[mv.to] {
-                Some(capt) if capt.color != self.turn => {
-                    self.h_capture(&mut h_black, params, capt, mv);
-                }
-                None => {
-                    self.h_move(&mut h_black, params, mv);
-                }
-                Some(def) => {
-                    self.h_defend(&mut h_black, params, def, mv);
-                }
+        self.unfiltered_moves_for(Black)
+            .for_each(|mv| {
+                match self[mv.to] {
+                    Some(capt) if capt.color != self.turn => {
+                        self.h_capture(&mut h_black, params, capt, mv);
+                    }
+                    None => {
+                        self.h_move(&mut h_black, params, mv);
+                    }
+                    Some(def) => {
+                        self.h_defend(&mut h_black, params, def, mv);
+                    }
+                };
+                h_black += params.available_moves;
             });
         // MATERIAL
         self.colored_pieces(White)
             .into_iter()
             .for_each(|piece| {
-                h_white += params.value(piece);
+                h_white += params.piece_value(piece);
                 if piece.0.kind == King {
                     white_king = 0.0;
                 }
@@ -185,13 +191,10 @@ impl Board {
             children.push(child);
             h += params.available_moves;
             match self[mv.to] {
-                Some(capt) if capt.color != self.turn => {
-                    self.h_capture(&mut h, params, capt, mv);
-                }
-                None => {}
-                Some(def) => {
-                    self.h_defend(&mut h, params, def, mv);
-                }
+                Some(capt) if capt.color != self.turn => self.h_capture(&mut h, params, capt, mv),
+
+                None => self.h_move(&mut h, params, mv),
+                Some(def) => self.h_defend(&mut h, params, def, mv),
             }
         });
         (h, children)
@@ -287,7 +290,7 @@ impl Board {
             }
         };
         let is_valid = self
-            .plays_for_piece(mov.from)
+            .moves_for_piece(mov.from)
             .contains(&mov);
         let castle = self.check_castle(mov);
 
@@ -357,8 +360,7 @@ impl Board {
             .map(|x| x.kind == King)
             .unwrap_or(false);
         let is_long = (mov.from.file - mov.to.file).abs() > 1;
-        log::info!("is_king {is_king}");
-        log::info!("is_long {is_long}");
+
         if is_king && is_long {
             let range = mov.from.file..(mov.to.file + 1);
             let pos = range
@@ -415,6 +417,7 @@ impl Board {
                     .copied()
             })?
     }
+
     /// returns an iterator over the pieces with
     /// filtering over the provided color.
     /// They are provided in the order of least valuable to
@@ -433,17 +436,26 @@ impl Board {
     pub fn moves(&self) -> impl Iterator<Item = Move> + '_ {
         self.colored_pieces(self.turn)
             .map(|(_, pos)| pos)
-            .flat_map(|pos| self.plays_for_piece(pos))
+            .flat_map(|pos| self.moves_for_piece(pos))
     }
     pub fn highlighted_squares(&self, pos: Position) -> impl Iterator<Item = Move> + '_ {
-        self.plays_for_piece(pos)
+        self.moves_for_piece(pos)
             .filter(|&mv| self.check_castle(mv))
     }
-
+    /// returns moves including self-captures.
+    /// This is useful for heuristics. To get self-captures filtered out check out
+    /// `[Board::moves_for]`
+    pub fn unfiltered_moves_for(&self, player: Color) -> impl Iterator<Item = Move> + '_ {
+        self.colored_pieces(player)
+            .map(|(_, pos)| pos)
+            .flat_map(|pos| self.unfiltered_moves_for_piece(pos))
+    }
+    /// returns pseudo valid moves. It does not return self-captures, but it may
+    /// include moves of pinned pieces, and invalid moves due to a check.  
     pub fn moves_for(&self, player: Color) -> impl Iterator<Item = Move> + '_ {
         self.colored_pieces(player)
             .map(|(_, pos)| pos)
-            .flat_map(|pos| self.plays_for_piece(pos))
+            .flat_map(|pos| self.moves_for_piece(pos))
     }
 
     pub fn advance_turn(&mut self) {
@@ -454,34 +466,44 @@ impl Board {
         self.moves()
     }
 
+    pub fn moves_for_piece(&self, pos: Position) -> impl Iterator<Item = Move> + '_ {
+        let player = self[pos].unwrap().color;
+        self.unfiltered_moves_for_piece(pos)
+            .filter(move |&mv| {
+                self[mv.to]
+                    .map(|piece| piece.color != player)
+                    .unwrap_or(true)
+            })
+    }
+
     #[allow(unreachable_patterns)]
-    pub fn plays_for_piece(&self, pos: Position) -> impl Iterator<Item = Move> + '_ {
+    pub fn unfiltered_moves_for_piece(&self, pos: Position) -> impl Iterator<Item = Move> + '_ {
         use itertools::Either::*;
         self[pos]
             .into_iter()
             .flat_map(move |piece| match piece.kind {
                 Bishop => self
-                    .bishop_moves(pos, piece.color)
+                    .bishop_moves(pos)
                     .pipe(Left)
                     .pipe(Left)
                     .pipe(Left),
                 King => self
-                    .king_moves(pos, piece.color)
+                    .king_moves(pos)
                     .pipe(Left)
                     .pipe(Left)
                     .pipe(Right),
                 Queen => self
-                    .queen_moves(pos, piece.color)
+                    .queen_moves(pos)
                     .pipe(Left)
                     .pipe(Right)
                     .pipe(Left),
                 Knight => self
-                    .knight_moves(pos, piece.color)
+                    .knight_moves(pos)
                     .pipe(Left)
                     .pipe(Right)
                     .pipe(Right),
                 Rook => self
-                    .rook_moves(pos, piece.color)
+                    .rook_moves(pos)
                     .pipe(Right)
                     .pipe(Left)
                     .pipe(Left),
@@ -505,44 +527,44 @@ impl Board {
     }
     /// # Bishop moves
     /// ready
-    fn bishop_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Move> + '_ {
-        self.walk(pos, color, -1, -1)
-            .chain(self.walk(pos, color, -1, 1))
-            .chain(self.walk(pos, color, 1, -1))
-            .chain(self.walk(pos, color, 1, 1))
+    fn bishop_moves(&self, pos: Position) -> impl Iterator<Item = Move> + '_ {
+        self.walk(pos, -1, -1)
+            .chain(self.walk(pos, -1, 1))
+            .chain(self.walk(pos, 1, -1))
+            .chain(self.walk(pos, 1, 1))
     }
     /// # Rook
     /// ready
-    fn rook_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Move> + '_ {
-        self.walk(pos, color, -1, 0)
-            .chain(self.walk(pos, color, 0, -1))
-            .chain(self.walk(pos, color, 0, 1))
-            .chain(self.walk(pos, color, 1, 0))
+    fn rook_moves(&self, pos: Position) -> impl Iterator<Item = Move> + '_ {
+        self.walk(pos, -1, 0)
+            .chain(self.walk(pos, 0, -1))
+            .chain(self.walk(pos, 0, 1))
+            .chain(self.walk(pos, 1, 0))
     }
     /// # Queen
     /// ## ready
     /// * diagonal moves
     /// * vertical and horizontal moves
 
-    fn queen_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Move> + '_ {
-        self.bishop_moves(pos, color)
-            .chain(self.rook_moves(pos, color))
+    fn queen_moves(&self, pos: Position) -> impl Iterator<Item = Move> + '_ {
+        self.bishop_moves(pos)
+            .chain(self.rook_moves(pos))
     }
     /// # King
     /// ## ready
     /// * basic moves
     /// * castling
 
-    fn king_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Move> {
-        self.king_castle_moves(pos, color)
-            .chain(self.relative(pos, color, 0, 1))
-            .chain(self.relative(pos, color, 0, -1))
-            .chain(self.relative(pos, color, 1, 0))
-            .chain(self.relative(pos, color, 1, 1))
-            .chain(self.relative(pos, color, 1, -1))
-            .chain(self.relative(pos, color, -1, 0))
-            .chain(self.relative(pos, color, -1, 1))
-            .chain(self.relative(pos, color, -1, -1))
+    fn king_moves(&self, pos: Position) -> impl Iterator<Item = Move> {
+        self.king_castle_moves(pos)
+            .chain(self.relative(pos, 0, 1))
+            .chain(self.relative(pos, 0, -1))
+            .chain(self.relative(pos, 1, 0))
+            .chain(self.relative(pos, 1, 1))
+            .chain(self.relative(pos, 1, -1))
+            .chain(self.relative(pos, -1, 0))
+            .chain(self.relative(pos, -1, 1))
+            .chain(self.relative(pos, -1, -1))
     }
     fn castle(&self, color: Color) -> Castle {
         match color {
@@ -551,7 +573,7 @@ impl Board {
         }
     }
 
-    fn king_castle_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Move> {
+    fn king_castle_moves(&self, pos: Position) -> impl Iterator<Item = Move> {
         let castle = self.castle(self.turn);
         let rank = pos.rank;
         let queenside = {
@@ -560,7 +582,7 @@ impl Board {
                 && self[(rank, 2)].is_none()
                 && self[(rank, 3)].is_none();
             if is_clear {
-                self.relative(pos, color, 0, -3)
+                self.relative(pos, 0, -3)
             } else {
                 None
             }
@@ -568,7 +590,7 @@ impl Board {
 
         let is_clear = castle.kingside && self[(rank, 5)].is_none() && self[(rank, 6)].is_none();
         if is_clear {
-            self.relative(pos, color, 0, 2)
+            self.relative(pos, 0, 2)
                 .into_iter()
                 .chain(queenside)
         } else {
@@ -586,10 +608,10 @@ impl Board {
     /// ## missing
     /// 1. pawn passant
     fn pawn_moves(&self, pos: Position, color: Color) -> impl Iterator<Item = Move> {
-        self.capture_only(pos, color, color.pawn_dir(), 1)
+        self.capture_only(pos, color.pawn_dir(), 1)
             .into_iter()
             .chain(self.pawn_passant(pos, color))
-            .chain(self.capture_only(pos, color, color.pawn_dir(), -1))
+            .chain(self.capture_only(pos, color.pawn_dir(), -1))
             .chain(self.moves_only(pos, color, color.pawn_dir(), 0))
             .chain({
                 let blocking: Position = (color.pawn_blocking_rank(), pos.file).into();
@@ -616,16 +638,16 @@ impl Board {
         None
     }
 
-    fn knight_moves(&'_ self, pos: Position, color: Color) -> impl Iterator<Item = Move> {
+    fn knight_moves(&'_ self, pos: Position) -> impl Iterator<Item = Move> {
         None.into_iter()
-            .chain(self.relative(pos, color, 2, -1))
-            .chain(self.relative(pos, color, 2, 1))
-            .chain(self.relative(pos, color, -2, -1))
-            .chain(self.relative(pos, color, -2, 1))
-            .chain(self.relative(pos, color, -1, 2))
-            .chain(self.relative(pos, color, 1, 2))
-            .chain(self.relative(pos, color, -1, -2))
-            .chain(self.relative(pos, color, 1, -2))
+            .chain(self.relative(pos, 2, -1))
+            .chain(self.relative(pos, 2, 1))
+            .chain(self.relative(pos, -2, -1))
+            .chain(self.relative(pos, -2, 1))
+            .chain(self.relative(pos, -1, 2))
+            .chain(self.relative(pos, 1, 2))
+            .chain(self.relative(pos, -1, -2))
+            .chain(self.relative(pos, 1, -2))
     }
     fn is_capture(&self, pos: Position, color: Color) -> bool {
         self[pos]
@@ -636,7 +658,7 @@ impl Board {
     /// This is used to describe the movements of pieces that can move in some relative
     /// direction but they cannot capture. This is used to describe the movements of pawns.
     fn moves_only(&self, from: Position, color: Color, rank: isize, file: isize) -> Option<Move> {
-        let mov = self.relative(from, color, rank, file)?;
+        let mov = self.relative(from, rank, file)?;
         if self[mov.to].is_none() {
             Some(mov)
         } else {
@@ -651,31 +673,25 @@ impl Board {
     /// from: represents the current position of the piece to be moved.
     /// rank: relative rank movement
     /// file: relative file movement
-    fn capture_only(&self, from: Position, color: Color, rank: isize, file: isize) -> Option<Move> {
-        let mov = self.relative(from, color, rank, file)?;
+    fn capture_only(&self, from: Position, rank: isize, file: isize) -> Option<Move> {
+        let mov = self.relative(from, rank, file)?;
         self[mov.to].map(|_| mov)
     }
 
-    fn relative(&self, from: Position, color: Color, rank: isize, file: isize) -> Option<Move> {
+    fn relative(&self, from: Position, rank: isize, file: isize) -> Option<Move> {
         let to = Position {
             rank: from.rank + rank,
             file: from.file + file,
         };
-        let mov = Some(Move {
+        Some(Move {
             to: to.validate()?,
             from,
-        });
-        match self[to] {
-            Some(piece) if piece.color != color => mov,
-            None => mov,
-            _ => None,
-        }
+        })
     }
 
     pub fn walk(
         &'_ self,
         init: Position,
-        color: Color,
         rank: isize,
         file: isize,
     ) -> impl Iterator<Item = Move> + '_ {
@@ -690,11 +706,10 @@ impl Board {
                     file: current.file - file,
                 };
                 match self[current] {
-                    Some(piece) if self[prev].is_none() => piece.color != color,
-                    Some(piece) if prev == init => piece.color != color,
+                    Some(piece) if prev == init => true,
+                    Some(_) => self[prev].is_none(),
                     None if prev == init => true,
                     None => self[prev].is_none(),
-                    Some(_) => false,
                 }
             })
             .map(move |to| Move { to, from: init })

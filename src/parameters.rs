@@ -29,11 +29,12 @@ pub struct Params {
 }
 
 impl Params {
-    pub fn piece_val(&self, tuple: (Piece, Position)) -> f32 {
-        self.piece_value * self.value(tuple)
+    pub fn piece_value(&self, piece: (Piece, Position)) -> f32 {
+        self.piece_value * self.value(piece)
     }
+
     pub fn attacked(&self, attacked: Piece, by: Piece, mov: Move) -> f32 {
-        self.attacked * self.value((attacked, mov.to)) / (1.0 + self.value((by, mov.from)))
+        self.attacked * self.value((attacked, mov.to)) / (self.value((by, mov.from)))
     }
 
     pub fn defended(&self, defended: Piece, by: Piece, Move { to: _, from }: Move) -> f32 {
@@ -45,7 +46,7 @@ impl Params {
                         .powi(2))
     }
     pub fn mov(&self, piece: Piece, mov: Move) -> f32 {
-        self.mov_value / self.value((piece, mov.to))
+        self.mov_value / (self.value((piece, mov.to)) + 1.0)
     }
     pub fn value(&self, tuple: (Piece, Position)) -> f32 {
         let index = (tuple.1, tuple.0.color);

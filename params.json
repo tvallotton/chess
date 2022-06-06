@@ -1,11 +1,11 @@
 {
-    "turn_value": 1.0,
+    "turn_value": 0.0,
     "max_depth": 1,
-    "defended": 1.0,
+    "defended": 0.0,
     "attacked": 1.0,
-    "available_moves": 100.0,
-    "piece_value": 0,
-    "mov_value": 0.1,
+    "available_moves": 0.0,
+    "piece_value": 0.0,
+    "mov_value": 0.0,
     "kingside_castle": 0.0,
     "queenside_castle": 0.0,
     "pawn": {
