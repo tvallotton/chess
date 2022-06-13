@@ -36,8 +36,8 @@ pub fn playable(r#move: Play) -> bool {
 
 #[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Position {
-    pub rank: isize,
-    pub file: isize,
+    pub rank: i8,
+    pub file: i8,
 }
 
 impl Position {
@@ -49,7 +49,7 @@ impl Position {
             None
         }
     }
-    pub fn relative(self, pos: &'_ [(isize, isize)]) -> impl Iterator<Item = Self> + '_ {
+    pub fn relative(self, pos: &'_ [(i8, i8)]) -> impl Iterator<Item = Self> + '_ {
         pos.iter()
             .copied()
             .map(|x| (x.0, x.1))
@@ -59,8 +59,8 @@ impl Position {
     }
 }
 
-impl From<(isize, isize)> for Position {
-    fn from(obj: (isize, isize)) -> Self {
+impl From<(i8, i8)> for Position {
+    fn from(obj: (i8, i8)) -> Self {
         Position {
             rank: obj.0,
             file: obj.1,

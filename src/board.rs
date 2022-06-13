@@ -1,11 +1,14 @@
-use core::panic;
-
 use crate::{
     moves::{Move, Position},
+    opt::Opt,
     parameters::Params,
     piece::{Color, Kind, Piece},
 };
 use arrayvec::ArrayVec;
+use core::panic;
+use piece_tracker::PieceTracker;
+use std::cmp::Ord;
+use std::collections::BinaryHeap;
 
 use float_ord::FloatOrd;
 use itertools::Itertools;
@@ -18,16 +21,43 @@ use Kind::*;
 /// It holds all the state in a board.
 /// The default value for Board is the initial chess setup.
 /// To create an empty board the `empty()` constructor can be used.
-#[derive(Debug, Clone, Copy, Properties, PartialEq)]
+#[derive(Debug, Clone, Properties, PartialEq)]
 pub struct Board {
     pub turn: Color,
     pub table: [[Option<Piece>; 8]; 8],
     pub black: Castle,
     pub white: Castle,
+    pub last: Position,
     // if there is a pawn vulnerable to the passant rule
     // then this field will contain that piece's position.
     pub passant: Option<Position>,
+    pub previous_score: f32,
+    pub opponent_score: f32,
+    pub diff_score: f32,
+    pub pieces: PieceTracker,
 }
+mod piece_tracker {
+    use arrayvec::ArrayVec;
+    #[derive(Debug, Clone, PartialEq, Default)]
+    pub struct PieceTracker {
+        pub black: ArrayVec<(i8, i8), 16>,
+        pub white: ArrayVec<(i8, i8), 16>,
+    }
+}
+
+impl PartialOrd for Board {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.h()
+            .partial_cmp(&other.h())
+    }
+}
+impl Ord for Board {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other)
+            .unwrap()
+    }
+}
+impl Eq for Board {}
 
 /// # Castle
 /// Indicates whether a player can castle in either side.
@@ -63,6 +93,24 @@ type Positions<'a> = Box<dyn Iterator<Item = Position> + 'a>;
 // }
 
 impl Board {
+    pub fn init_piece_tracker(&mut self) {
+        for i in 0..8 {
+            for j in 0..8 {
+                match self[(i, j)] {
+                    Some(piece) if piece.color == Black => {
+                        self.pieces.black.push((i, j));
+                    }
+                    Some(_) => {
+                        self.pieces.white.push((i, j));
+                    }
+                    None => (),
+                }
+            }
+        }
+    }
+    pub fn h(&self) -> f32 {
+        self.previous_score + self.diff_score - self.opponent_score
+    }
     pub fn empty() -> Board {
         Board {
             turn: White,
@@ -70,6 +118,11 @@ impl Board {
             table: Default::default(),
             black: Castle::default(),
             white: Castle::default(),
+            last: (4, 3).into(),
+            previous_score: 0.0,
+            opponent_score: 0.0,
+            diff_score: 0.0,
+            pieces: Default::default(),
         }
     }
 
@@ -86,6 +139,7 @@ impl Board {
             let rook = self[(from_rank, from_file)].take();
             self[(from_rank, to_file)] = rook;
         }
+
         self[to] = piece;
         match self.turn {
             Black => self.black = Castle::no_castle(),
@@ -96,7 +150,7 @@ impl Board {
         let mut children = ArrayVec::new();
 
         self.moves().for_each(|mv| {
-            let mut child = *self;
+            let mut child = self.clone();
             child.apply_unchecked(mv);
             child.advance_turn();
             children.push((child, mv));
@@ -109,107 +163,154 @@ impl Board {
     fn children(&self) -> ArrayVec<Self, 128> {
         let mut children = ArrayVec::new();
         self.moves().for_each(|mv| {
-            let mut child = *self;
+            let mut child = self.clone();
             child.apply_unchecked(mv);
             child.advance_turn();
-            children.push(child);
+            if mv.to == self.last {
+                children.insert(0, child);
+            } else {
+                children.push(child);
+            }
         });
         children
     }
     /// It computes the full heuristic.
-    /// TODO: CLEANUP
     #[inline]
     pub fn heuristic(&self, params: &Params) -> f32 {
         let mut h_white = 0.0;
         let mut h_black = 0.0;
-        let mut white_king = f32::NEG_INFINITY;
-        let mut black_king = f32::NEG_INFINITY;
-        self.unfiltered_moves_for(White)
-            .for_each(|mv| match self[mv.to] {
-                Some(capt) if capt.color == Black => {
-                    self.h_capture(&mut h_white, params, capt, mv);
-                    h_white += params.available_moves;
-                }
-                None => {
-                    self.h_move(&mut h_white, params, mv);
-                    h_white += params.available_moves;
-                }
-                Some(def) => {
-                    self.h_defend(&mut h_white, params, def, mv);
-                }
-            });
-        self.unfiltered_moves_for(Black)
-            .for_each(|mv| {
-                match self[mv.to] {
-                    Some(capt) if capt.color == White => {
-                        self.h_capture(&mut h_black, params, capt, mv);
-                        h_black += params.available_moves;
+        let mut white_king = -500.0;
+        let mut black_king = -500.0;
+        for i in 0..8 {
+            for j in 0..8 {
+                match self[(i, j)] {
+                    Some(piece) if piece.color == White => {
+                        h_white += params.piece_value((piece, (i, j).into()));
+                        if piece.kind == King {
+                            white_king = 0.0;
+                        }
                     }
-                    None => {
-                        self.h_move(&mut h_black, params, mv);
-                        h_black += params.available_moves;
+                    Some(piece) if piece.color == Black => {
+                        h_black += params.piece_value((piece, (i, j).into()));
+                        if piece.kind == King {
+                            black_king = 0.0;
+                        }
                     }
-                    Some(def) => {
-                        self.h_defend(&mut h_black, params, def, mv);
-                    }
-                };
-            });
-        // MATERIAL
-        self.colored_pieces(White)
-            .into_iter()
-            .for_each(|piece| {
-                h_white += params.piece_value(piece);
-
-                if piece.0.kind == King {
-                    white_king = 0.0;
+                    _ => (),
                 }
-            });
-
-        self.colored_pieces(Black)
-            .into_iter()
-            .for_each(|piece| {
-                h_black += params.piece_value(piece);
-
-                if piece.0.kind == King {
-                    black_king = 0.0;
-                }
-            });
+            }
+        }
+        h_white += if self.white.kingside {
+            params.castle_kingside
+        } else {
+            0.0
+        };
+        h_white += if self.white.queenside {
+            params.castle_queenside
+        } else {
+            0.0
+        };
+        h_black += if self.black.kingside {
+            params.castle_kingside
+        } else {
+            0.0
+        };
+        h_black += if self.black.queenside {
+            params.castle_queenside
+        } else {
+            0.0
+        };
         h_white + white_king - h_black - black_king
     }
     /// it computes the children along with a one sided heuristic
     /// (only for the current player).
     #[inline]
-    fn h_children(&self, params: &Params) -> (f32, ArrayVec<Self, 128>) {
-        let mut h = 0.0;
+    fn h_children(&self, params: &Params) -> ArrayVec<Self, 128> {
+        let mut opp = 0.0;
         let mut children = ArrayVec::new();
-        self.moves().for_each(|mv| {
-            let mut child = *self;
-            child.apply_unchecked(mv);
-            children.push(child);
-            h += params.available_moves;
-            match self[mv.to] {
-                Some(capt) if capt.color != self.turn => self.h_capture(&mut h, params, capt, mv),
 
-                None => self.h_move(&mut h, params, mv),
-                Some(def) => self.h_defend(&mut h, params, def, mv),
+        self.unfiltered_moves_for(self.turn)
+            .for_each(|mv| {
+                let mut child = self.clone();
+                let piece = self[mv.from].unwrap();
+                match self[mv.to] {
+                    Some(defeded) if defeded.color == self.turn => {
+                        opp += params.defended(defeded, piece, mv);
+                        return;
+                    }
+                    Some(_) | None => {
+                        let capture = child.apply_unchecked(mv);
+                        if let Some(capture) = capture {
+                            opp += params.attacked(capture, piece, mv);
+                            child.diff_score += params.value((capture, mv.to));
+                        } else {
+                            opp += params.mov(piece, mv);
+                        }
+                        opp += params.available_moves;
+                    }
+                }
+                children.push(child.clone());
+            });
+
+        for child in &mut children {
+            child.previous_score = child.opponent_score;
+            child.opponent_score = opp;
+        }
+
+        children
+    }
+
+    pub fn monte_carlo(&self, params: &Params, depth: usize, mut alpha: f32, mut beta: f32) -> f32 {
+        let mut h = 0.0;
+
+        if depth == params.max_depth {
+            return self.heuristic(params);
+        }
+
+        let mut children = self.children();
+
+        let explore = children.len() * (params.max_depth - depth) / params.max_depth;
+
+        if let White = self.turn {
+            let mut max = f32::NEG_INFINITY;
+
+            for _ in 0..explore {
+                let child = children
+                    .pop_at(rand::random::<usize>() % children.len())
+                    .unwrap();
+                let score = child.monte_carlo(params, depth + 1, alpha, beta);
+                max = max.max(score);
+                alpha = alpha.max(score);
+                if beta <= alpha {
+                    break;
+                }
             }
-        });
-        (h, children)
+
+            alpha
+        } else {
+            let mut min = f32::INFINITY;
+
+            for _ in 0..explore {
+                let child = children
+                    .pop_at(rand::random::<usize>() % children.len())
+                    .unwrap();
+                let score = child.monte_carlo(params, depth + 1, alpha, beta);
+                min = min.min(score);
+                beta = beta.min(score);
+                if beta <= alpha {
+                    break;
+                }
+            }
+            beta
+        }
     }
-    #[inline]
-    fn h_defend(&self, h: &mut f32, params: &Params, def: Piece, mv: Move) {
-        let by = self[mv.from].unwrap();
-        *h += params.defended(def, by, mv);
-    }
-    #[inline]
-    fn h_move(&self, h: &mut f32, params: &Params, mov: Move) {
-        let piece = self[mov.from].unwrap();
-        *h += params.mov(piece, mov);
-    }
-    #[inline]
-    fn h_capture(&self, h: &mut f32, params: &Params, capt: Piece, mv: Move) {
-        let by = self[mv.from].unwrap();
-        *h += params.attacked(capt, by, mv);
+
+    pub fn random_move(&mut self) {
+        let moves: ArrayVec<_, 128> = self
+            .moves()
+            .pipe(ArrayVec::from_iter);
+        let mov = rand::random::<usize>() % moves.len();
+        self.apply_unchecked(moves[mov]);
     }
 
     #[inline]
@@ -234,11 +335,16 @@ impl Board {
     }
 
     #[inline]
-    pub fn apply_pawn_move(&mut self, mut piece: Option<Piece>, Move { from, to }: Move) {
+    pub fn apply_pawn_move(
+        &mut self,
+        mut piece: Option<Piece>,
+        Move { from, to }: Move,
+        captured: &mut Option<Piece>,
+    ) {
         // if to piece was taken in a diagonal move
         // this implies that a en passant pawn was captured
         // When moving straight this does nothing.
-        self[to].or_else(|| {
+        *captured = self[to].or_else(|| {
             let mut to = to;
             to.rank -= self.turn.pawn_dir();
             self[to].take()
@@ -261,19 +367,19 @@ impl Board {
     /// This is intended for fast computations.
     /// On invalid inputs its behavior is erratic.
     #[inline]
-    pub fn apply_unchecked(&mut self, mov: Move) {
+    pub fn apply_unchecked(&mut self, mov: Move) -> Option<Piece> {
         let Move { from, to } = mov;
         let piece = self[from].take();
-
-        match piece.map(|x| x.kind) {
-            Some(Pawn) => self.apply_pawn_move(piece, mov),
+        let mut captured = self[to];
+        let x = match piece.map(|x| x.kind) {
+            Some(Pawn) => self.apply_pawn_move(piece, mov, &mut captured),
             Some(Queen | Bishop | Knight | Rook) => {
-                self[to] = piece;
                 self.passant = None;
+                self[to] = piece;
             }
             Some(King) => {
-                self.apply_king_move(piece, mov);
                 self.passant = None;
+                self.apply_king_move(piece, mov);
             }
             None => {
                 self.colored_pieces(self.turn)
@@ -292,9 +398,9 @@ impl Board {
                     .for_each(|_| {});
                 unreachable!("{self}\n{mov:?}")
             }
-        }
-
+        };
         self.remove_castle_rights(mov);
+        captured
     }
 
     pub fn apply(&mut self, mov: Move) -> Result<(), ()> {
@@ -345,17 +451,74 @@ impl Board {
         }
     }
 
+    pub fn a_star(&self, params: &Params) -> f32 {
+        let mut heap = BinaryHeap::with_capacity(30000);
+        heap.push(self.clone());
+
+        let mut out = 0;
+        while let Some(node) = heap.pop() {
+            let children = node.h_children(params);
+
+            for child in children {
+                heap.push(child);
+            }
+
+            if heap.len() >= 5000 {
+                // log::debug!("DROPPING");
+                // log::debug!("init len {}", heap.len());
+                let mut sum = 0.0;
+                let mut total = 0;
+                heap.retain(|b| {
+                    total += 1;
+                    sum += b.h();
+                    b.h() > sum / total as f32
+                });
+                
+            }
+            if out == 1000 {
+                break;
+            }
+            out += 1;
+        }
+        let len = heap.len(); 
+        let out = heap.into_iter()
+            .map(|board| {
+                board.heuristic(params)
+            })
+            .sum::<f32>() / len as f32; 
+            // log::info!("{self}"); 
+            // log::info!("h: {out}"); 
+            out
+
+    }
+
     // TODO: cleanup
     pub fn play_with(&self, params: &Params) -> Option<Move> {
         let moves = self
             .children_moves()
             .into_iter();
         let mut sorted: ArrayVec<_, 128> = ArrayVec::from_iter(moves);
-        sorted.sort_by_key(|(child, _)| {
-            child
-                .minimax(params, params.max_depth, f32::NEG_INFINITY, f32::INFINITY)
-                .pipe(FloatOrd)
-        });
+
+        if !params.monte_carlo.used {
+            sorted.sort_by_key(|(child, _)| {
+                child
+                    .minimax(
+                        params,
+                        params.max_depth as i32,
+                        f32::NEG_INFINITY,
+                        f32::INFINITY,
+                    )
+                    .pipe(FloatOrd)
+            });
+        } else {
+            sorted.sort_by_key(|(child, _)| {
+                child
+                    .a_star(params)
+                    .pipe(FloatOrd)
+            });
+        }
+
+        // CLEANUP
         let (first, second) = {
             if self.turn == White {
                 (sorted.last()?.1, sorted.get(sorted.len() - 2))
@@ -672,7 +835,7 @@ impl Board {
 
     /// This is used to describe the movements of pieces that can move in some relative
     /// direction but they cannot capture. This is used to describe the movements of pawns.
-    fn moves_only(&self, from: Position, color: Color, rank: isize, file: isize) -> Option<Move> {
+    fn moves_only(&self, from: Position, color: Color, rank: i8, file: i8) -> Option<Move> {
         let mov = self.relative(from, rank, file)?;
         if self[mov.to].is_none() {
             Some(mov)
@@ -688,12 +851,12 @@ impl Board {
     /// from: represents the current position of the piece to be moved.
     /// rank: relative rank movement
     /// file: relative file movement
-    fn capture_only(&self, from: Position, rank: isize, file: isize) -> Option<Move> {
+    fn capture_only(&self, from: Position, rank: i8, file: i8) -> Option<Move> {
         let mov = self.relative(from, rank, file)?;
         self[mov.to].map(|_| mov)
     }
 
-    fn relative(&self, from: Position, rank: isize, file: isize) -> Option<Move> {
+    fn relative(&self, from: Position, rank: i8, file: i8) -> Option<Move> {
         let to = Position {
             rank: from.rank + rank,
             file: from.file + file,
@@ -704,12 +867,7 @@ impl Board {
         })
     }
 
-    pub fn walk(
-        &'_ self,
-        init: Position,
-        rank: isize,
-        file: isize,
-    ) -> impl Iterator<Item = Move> + '_ {
+    pub fn walk(&'_ self, init: Position, rank: i8, file: i8) -> impl Iterator<Item = Move> + '_ {
         (1..8)
             .map(move |i| (init.rank + rank * i, init.file + file * i))
             .take_while(|pos| 0 <= pos.0 && pos.0 < 8)

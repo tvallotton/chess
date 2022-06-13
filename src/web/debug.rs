@@ -4,7 +4,7 @@ use crate::moves::{Move, Position};
 use crate::piece::Color;
 use yew::prelude::{function_component as component, UseStateHandle as U, *};
 
-fn onclick(board: &U<Board>, selected: &U<Option<(isize, isize)>>) -> Callback<(isize, isize)> {
+fn onclick(board: &U<Board>, selected: &U<Option<(i8, i8)>>) -> Callback<(i8, i8)> {
     let board = board.clone();
     let selected = selected.clone();
     Callback::from(move |to: (_, _)| {
@@ -56,12 +56,12 @@ pub fn debug() -> Html {
         board_.set(new);
     };
     
-
+    let board = &*board; 
     
     html!(
         <>
         <h1>{"Play"}</h1>
-            <BoardComponent  board={*board} onclick={onclick} selected={*selected}/>
+            <BoardComponent  board={board.clone()} onclick={onclick} selected={*selected} play_as={Color::default()}/>
             <button onclick={play}>{"Play"}</button>
             <h2>{"heuristic:"} {board.heuristic(&Default::default())}</h2>
             

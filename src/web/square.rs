@@ -19,10 +19,10 @@ impl Piece {
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props {
     pub color: &'static str,
-    pub rank: isize,
-    pub file: isize,
+    pub rank: i8,
+    pub file: i8,
     pub piece: Option<Piece>,
-    pub onclick: Callback<(isize, isize)>,
+    pub onclick: Callback<(i8, i8)>,
     pub selected: bool,
     pub highlighted: bool,
 }

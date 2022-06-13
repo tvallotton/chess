@@ -58,25 +58,25 @@ impl Color {
             White => Black,
         }
     }
-    pub fn promotion_rank(self) -> isize {
+    pub fn promotion_rank(self) -> i8 {
         match self {
             Black => 7,
             White => 0,
         }
     }
-    pub fn pawn_blocking_rank(self) -> isize {
+    pub fn pawn_blocking_rank(self) -> i8 {
         match self {
             Black => 2,
             White => 5,
         }
     }
-    pub fn pawn_start(self) -> isize {
+    pub fn pawn_start(self) -> i8 {
         match self {
             Black => 1,
             White => 6,
         }
     }
-    pub fn pawn_dir(self) -> isize {
+    pub fn pawn_dir(self) -> i8 {
         match self {
             Black => 1,
             White => -1,

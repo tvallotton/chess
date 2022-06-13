@@ -1,16 +1,17 @@
 use super::square::Square;
-use crate::{board::Board as BoardProps};
-
+use crate::board::Board as BoardProps;
+use crate::piece::Color;
 use yew::prelude::{function_component as component, *};
 
 #[derive(Clone, Properties, PartialEq, Default)]
 pub struct Props {
     pub board: BoardProps,
-    pub onclick: Callback<(isize, isize)>,
-    pub selected: Option<(isize, isize)>,
+    pub onclick: Callback<(i8, i8)>,
+    pub selected: Option<(i8, i8)>,
+    pub play_as: Color,
 }
 
-pub fn color(rank: isize, file: isize) -> &'static str {
+pub fn color(rank: i8, file: i8) -> &'static str {
     if (rank + file) % 2 == 0 {
         "white"
     } else {
@@ -18,7 +19,7 @@ pub fn color(rank: isize, file: isize) -> &'static str {
     }
 }
 
-fn highlighted(board: &BoardProps, selected: Option<(isize, isize)>) -> Vec<(isize, isize)> {
+fn highlighted(board: &BoardProps, selected: Option<(i8, i8)>) -> Vec<(i8, i8)> {
     if let Some(pos) = selected {
         board
             .highlighted_squares(pos.into())
@@ -36,14 +37,24 @@ pub fn board(
         board,
         onclick,
         selected,
+        play_as,
         ..
     }: &Props,
 ) -> Html {
     let mut total = html!();
     let highlighted = &highlighted(board, *selected);
-    for rank in 0..8 {
+    let rank_range: Vec<_> = match play_as {
+        Color::White => (0..8).collect(),
+        Color::Black => (0..8).rev().collect(),
+    };
+     let file_range: Vec<_> = match play_as {
+        Color::White => (0..8).collect(),
+        Color::Black => (0..8).rev().collect(),
+    };
+
+    for rank in rank_range {
         let mut row = html!();
-        for file in 0..8 {
+        for &file in &file_range {
             let color = color(rank, file);
 
             let square = html! (

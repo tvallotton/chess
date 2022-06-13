@@ -32,7 +32,7 @@ fn switch(route: &Route) -> Html {
 }
 
 #[component(App)]
-fn app(&_board: &Props) -> Html {
+fn app(board: &Props) -> Html {
     html!(
         <BrowserRouter>
             <Switch<Route> render={Switch::render(switch)} />

@@ -8,9 +8,9 @@ use crate::{board::Board, piece::Color};
 use yew::prelude::{function_component as component, UseStateHandle as U, *};
 
 type History = U<Vec<Board>>;
-type Selected = U<Option<(isize, isize)>>;
+type Selected = U<Option<(i8, i8)>>;
 
-fn onclick(hist: &History, sel: &Selected, play_as: Color) -> Callback<(isize, isize)> {
+fn onclick(hist: &History, sel: &Selected, play_as: Color) -> Callback<(i8, i8)> {
     let hist = hist.clone();
     let sel = sel.clone();
 
@@ -44,7 +44,7 @@ fn play(board: Board, hist: &History, selected: &Selected) -> impl Fn(MouseEvent
     let hist = hist.clone();
     let selected = selected.clone();
     move |_| {
-        let mut new = board;
+        let mut new = board.clone();
         let mov = new
             .play_with(&Default::default())
             .unwrap();
@@ -74,22 +74,23 @@ pub fn play(Props { play_as }: &Props) -> Html {
 
     let onclick = onclick(&history, &selected, *play_as);
 
-    let play = play(board, &history, &selected);
+    let play = play(board.clone(), &history, &selected);
 
     let undo = move |_| {
         let mut hist = history.deref().clone();
         hist.pop();
         history.set(hist);
     };
-    let check = board
-        .check()
-        .map(|x| x.to_string())
-        .unwrap_or_default();
+    // let check = board
+    //     .check()
+    //     .map(|x| x.to_string())
+    //     .unwrap_or_default();
+    let b = board.clone(); 
     let print_moves = move |_| {
-        board
-            .colored_pieces(board.turn)
+        b
+            .colored_pieces(b.turn)
             .map(|(piece, pos)| {
-                board
+                b
                     .moves_for_piece(pos)
                     .for_each(|mv| {
                         log::debug!("mv: {mv:?} {piece:?}");
@@ -100,12 +101,12 @@ pub fn play(Props { play_as }: &Props) -> Html {
     html!(
         <>
         <h1>{"Playing as "} {play_as}</h1>
-            <BoardComponent  board={board} onclick={onclick} selected={*selected}/>
+            <BoardComponent  board={board.clone()} onclick={onclick} selected={*selected} play_as={*play_as}/>
             <button onclick={play}>{"Play"}</button>
             <button onclick={undo}> {"Undo"}</button>
             <p><b>{"turn: "}</b> {board.turn}</p>
             <p><b>{"heuristic: "}</b> {board.heuristic(&Default::default())}</p>
-            <p><b>{"check: "}</b> {check}</p>
+            // <p><b>{"check: "}</b> {check}</p>
             <button onclick={print_moves}>{"Print moves"}</button>
         </>
     )

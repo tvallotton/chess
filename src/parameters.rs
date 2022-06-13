@@ -18,15 +18,25 @@ pub struct Params {
     pub defended: f32,
     pub attacked: f32,
     pub available_moves: f32,
-    pub turn_value: f32,
-    pub max_depth: i32,
+    pub castle_kingside: f32, 
+    pub castle_queenside: f32, 
+    pub material_only: bool,
+    pub max_depth: usize,
     pub pawn: ValueTable,
     pub king: ValueTable,
     pub queen: ValueTable,
     pub knight: ValueTable,
     pub bishop: ValueTable,
     pub rook: ValueTable,
+    pub monte_carlo: MonteCarlo
 }
+#[derive(Debug, Deserialize, Clone)]
+pub struct MonteCarlo {
+   pub depth: usize, 
+   pub width: usize, 
+   pub used: bool
+}
+
 
 impl Params {
     pub fn piece_value(&self, piece: (Piece, Position)) -> f32 {

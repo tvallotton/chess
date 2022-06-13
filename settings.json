@@ -2,7 +2,7 @@
     "settings_path": "",
     "nocapture": false,
     "recursion_limit": 10000,
-    "max_depth": 2,
+    "max_depth": 3,
     "time_limit": 10,
     "memory_limit": 2000,
     "absolute_params": {
