@@ -5,21 +5,24 @@ use crate::{
 };
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tap::Pipe;
 
 use std::{ops::Index, str::FromStr};
 
 use Kind::*;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize,Serialize,  Clone)]
 pub struct Params {
+    pub sort_depth: i32, 
+    pub max_iter: i32,
     pub piece_value: f32,
     pub mov_value: f32,
     pub defended: f32,
     pub attacked: f32,
     pub available_moves: f32,
-    pub castle_kingside: f32, 
-    pub castle_queenside: f32, 
+    pub castle_kingside: f32,
+    pub castle_queenside: f32,
     pub material_only: bool,
     pub max_depth: usize,
     pub pawn: ValueTable,
@@ -28,17 +31,66 @@ pub struct Params {
     pub knight: ValueTable,
     pub bishop: ValueTable,
     pub rook: ValueTable,
-    pub monte_carlo: MonteCarlo
-}
-#[derive(Debug, Deserialize, Clone)]
-pub struct MonteCarlo {
-   pub depth: usize, 
-   pub width: usize, 
-   pub used: bool
+    pub black_algorithm: Algorithm,
+    pub white_algorithm: Algorithm,
+    pub tolerance: Vec<f32>,
 }
 
-
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Algorithm {
+    AlphaBetaPruning,
+    Prepruning,
+}
+fn random() -> f32 {
+    rand::random()
+}
+const LEARNING_RATE: f32 = 1.0; 
 impl Params {
+    
+
+    pub fn split(&self) -> (Params, Params) {
+        let mut pos = self.clone();
+        let mut neg = self.clone();
+
+        let r = random();
+        pos.attacked += r * LEARNING_RATE;
+        neg.attacked -= r * LEARNING_RATE;
+
+        let r = random();
+        pos.defended += r * LEARNING_RATE;
+        neg.defended -= r * LEARNING_RATE;
+
+        let r = random();
+        pos.castle_kingside += r * LEARNING_RATE;
+        neg.castle_kingside -= r * LEARNING_RATE;
+
+        let r = random();
+        pos.castle_queenside += r * LEARNING_RATE;
+        neg.castle_queenside -= r * LEARNING_RATE;
+
+        let r = random(); 
+        pos.available_moves += r * LEARNING_RATE; 
+        neg.available_moves -= r * LEARNING_RATE; 
+
+        let r = random(); 
+        pos.mov_value += r * LEARNING_RATE; 
+        neg.mov_value -= r * LEARNING_RATE; 
+
+        (neg, pos)
+    }
+
+    pub fn tolerance(&self, depth: i32) -> f32 {
+        self.tolerance[self.max_depth - depth as usize]
+    }
+
+    pub fn algorithm(&self, color: Color) -> Algorithm {
+        match color {
+            Color::Black => self.black_algorithm,
+            Color::White => self.white_algorithm,
+        }
+    }
+
     pub fn piece_value(&self, piece: (Piece, Position)) -> f32 {
         self.piece_value * self.value(piece)
     }
@@ -91,18 +143,32 @@ impl FromStr for Params {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ValueTable {
-    white: [[f32; 8]; 8],
-    black: [[f32; 8]; 8],
+pub struct ValueTable([[f32; 8]; 8]);
+
+impl ValueTable {
+    fn split(&self) -> (Self, Self) {
+        let mut first = self.clone();
+        let mut second = self.clone();
+
+        for i in 0..8 {
+            for j in 0..8 {
+                let r = rand::random::<f32>() * 0.1;
+                first.0[i][j] += r;
+                second.0[i][j] -= r;
+            }
+        }
+        (first, second)
+    }
 }
 
 impl Index<(Position, Color)> for ValueTable {
     type Output = f32;
     fn index(&self, index: (Position, Color)) -> &Self::Output {
         let (pos, color) = index;
-        match color {
-            Color::White => &self.white[pos.rank as usize][pos.file as usize],
-            _ => &self.black[pos.rank as usize][pos.file as usize],
-        }
+        let rank = match color {
+            Color::White => pos.rank,
+            _ => 7 - pos.rank,
+        } as usize;
+        &self.0[rank][pos.file as usize]
     }
 }

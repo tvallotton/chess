@@ -52,6 +52,7 @@ impl FromStr for Color {
 }
 
 impl Color {
+    #[inline]
     pub fn opposite(self) -> Color {
         match self {
             Black => White,

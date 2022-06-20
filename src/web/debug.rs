@@ -15,8 +15,6 @@ fn onclick(board: &U<Board>, selected: &U<Option<(i8, i8)>>) -> Callback<(i8, i8
                 from: from.into(),
                 to: to.into(),
             });
-
-            new.advance_turn();
             selected.set(None);
             board.set(new);
         } else if board[to].is_some() {
@@ -25,11 +23,8 @@ fn onclick(board: &U<Board>, selected: &U<Option<(i8, i8)>>) -> Callback<(i8, i8
     })
 }
 
-fn play(board: &Board) -> impl FnMut(MouseEvent)  {
-    
-    |_| {
-
-    }
+fn play(board: &Board) -> impl FnMut(MouseEvent) {
+    |_| {}
 }
 
 #[component(Debug)]
@@ -46,25 +41,21 @@ pub fn debug() -> Html {
     let board_ = board.clone();
     let play = move |_| {
         let mut new = Board::clone(&board_);
-        let mov = new
-            .play_with(&Default::default())
+        new.play_with(&Default::default())
             .unwrap();
-
-        new.apply_unchecked(mov);
-        new.advance_turn();
         selected_.set(None);
         board_.set(new);
     };
-    
-    let board = &*board; 
-    
+
+    let board = &*board;
+
     html!(
         <>
         <h1>{"Play"}</h1>
             <BoardComponent  board={board.clone()} onclick={onclick} selected={*selected} play_as={Color::default()}/>
             <button onclick={play}>{"Play"}</button>
             <h2>{"heuristic:"} {board.heuristic(&Default::default())}</h2>
-            
+
         </>
     )
 }

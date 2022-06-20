@@ -26,9 +26,6 @@ fn onclick(hist: &History, sel: &Selected, play_as: Color) -> Callback<(i8, i8)>
                 from: from.into(),
                 to: to.into(),
             });
-            if result.is_ok() {
-                board.advance_turn();
-            }
             sel.set(None);
             new_hist.push(board);
             hist.set(new_hist);
@@ -40,17 +37,20 @@ fn onclick(hist: &History, sel: &Selected, play_as: Color) -> Callback<(i8, i8)>
     })
 }
 
-fn play(board: Board, hist: &History, selected: &Selected) -> impl Fn(MouseEvent) {
+fn play(
+    board: Board,
+    hist: &History,
+    selected: &Selected,
+    search: UseStateHandle<f32>,
+) -> impl Fn(MouseEvent) {
     let hist = hist.clone();
     let selected = selected.clone();
     move |_| {
         let mut new = board.clone();
-        let mov = new
-            .play_with(&Default::default())
-            .unwrap();
-
-        new.apply_unchecked(mov);
-        new.advance_turn();
+        search.set(
+            new.play_with(&Default::default())
+                .unwrap_or_else(|| panic!("{board}")),
+        );
         selected.set(None);
         let mut new_hist = hist.deref().clone();
         new_hist.push(new);
@@ -69,12 +69,13 @@ pub fn play(Props { play_as }: &Props) -> Html {
         .last()
         .unwrap()
         .clone();
+    let search = use_state(|| 0.0);
 
     let selected = use_state(|| None);
 
     let onclick = onclick(&history, &selected, *play_as);
 
-    let play = play(board.clone(), &history, &selected);
+    let play = play(board.clone(), &history, &selected, search.clone());
 
     let undo = move |_| {
         let mut hist = history.deref().clone();
@@ -85,13 +86,11 @@ pub fn play(Props { play_as }: &Props) -> Html {
     //     .check()
     //     .map(|x| x.to_string())
     //     .unwrap_or_default();
-    let b = board.clone(); 
+    let b = board.clone();
     let print_moves = move |_| {
-        b
-            .colored_pieces(b.turn)
+        b.colored_pieces(b.turn)
             .map(|(piece, pos)| {
-                b
-                    .moves_for_piece(pos)
+                b.moves_for_piece(pos)
                     .for_each(|mv| {
                         log::debug!("mv: {mv:?} {piece:?}");
                     })
@@ -106,6 +105,8 @@ pub fn play(Props { play_as }: &Props) -> Html {
             <button onclick={undo}> {"Undo"}</button>
             <p><b>{"turn: "}</b> {board.turn}</p>
             <p><b>{"heuristic: "}</b> {board.heuristic(&Default::default())}</p>
+            <p><b>{"cached heurisitc: "}</b> {board.cached_heuristic()}</p>
+            <p><b>{"search evaluation: "}</b> {*search}</p>
             // <p><b>{"check: "}</b> {check}</p>
             <button onclick={print_moves}>{"Print moves"}</button>
         </>

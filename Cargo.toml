@@ -27,4 +27,6 @@ float-ord = "0.3.2"
 # rand = "0.8.5"
 getrandom = { version = "0.2.4", features = ["js"] }
 rand = "0.8.5"
+rayon = "1.5.3"
+
 # WASM

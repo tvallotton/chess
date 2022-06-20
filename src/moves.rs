@@ -15,6 +15,7 @@ pub struct Move {
     pub to: Position,
     pub from: Position,
 }
+
 /// A play is wrapper around a move that carries more information.
 /// Not all plays can actually be played, i.e., `Defense` does
 /// not represent a move that can be played in this turn, but
@@ -28,6 +29,11 @@ pub enum Play {
     Move(Move),
     RightCastle,
     LeftClastle,
+}
+#[derive(Debug, Clone, Copy)]
+enum Finish {
+    Draw, 
+    Resign
 }
 
 pub fn playable(r#move: Play) -> bool {

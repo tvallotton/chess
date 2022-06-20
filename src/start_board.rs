@@ -1,12 +1,12 @@
 use std::fmt::Display;
 
-use crate::board::{Board};
+use crate::board::Board;
 use crate::piece::*;
 
 impl Default for Board {
     fn default() -> Self {
         let empty = [None, None, None, None, None, None, None, None];
-        Board {
+        let mut board = Board {
             table: [
                 [
                     Some(Black | Rook),
@@ -54,7 +54,9 @@ impl Default for Board {
                 ],
             ],
             ..Board::empty()
-        }
+        };
+        board.init_piece_tracker();
+        board
     }
 }
 

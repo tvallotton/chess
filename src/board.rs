@@ -1,12 +1,13 @@
 use crate::{
     moves::{Move, Position},
     opt::Opt,
-    parameters::Params,
+    parameters::{Algorithm, Params},
     piece::{Color, Kind, Piece},
+    piece_tracker::PieceTracker,
 };
 use arrayvec::ArrayVec;
 use core::panic;
-use piece_tracker::PieceTracker;
+use log::debug;
 use std::cmp::Ord;
 use std::collections::BinaryHeap;
 
@@ -16,6 +17,12 @@ use tap::prelude::*;
 use yew::Properties;
 use Color::*;
 use Kind::*;
+#[derive(Debug, Clone, Copy, Default)]
+struct Stats {
+    explored: [i32; 10],
+    prepruned: [i32; 10],
+    pruned: [i32; 10],
+}
 
 /// # Board
 /// It holds all the state in a board.
@@ -23,32 +30,25 @@ use Kind::*;
 /// To create an empty board the `empty()` constructor can be used.
 #[derive(Debug, Clone, Properties, PartialEq)]
 pub struct Board {
+    /// the stored board turn
     pub turn: Color,
     pub table: [[Option<Piece>; 8]; 8],
     pub black: Castle,
     pub white: Castle,
     pub last: Position,
-    // if there is a pawn vulnerable to the passant rule
-    // then this field will contain that piece's position.
+    /// if there is a pawn vulnerable to the passant rule
+    /// then this field will contain that piece's position.
     pub passant: Option<Position>,
     pub previous_score: f32,
     pub opponent_score: f32,
     pub diff_score: f32,
     pub pieces: PieceTracker,
 }
-mod piece_tracker {
-    use arrayvec::ArrayVec;
-    #[derive(Debug, Clone, PartialEq, Default)]
-    pub struct PieceTracker {
-        pub black: ArrayVec<(i8, i8), 16>,
-        pub white: ArrayVec<(i8, i8), 16>,
-    }
-}
 
 impl PartialOrd for Board {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.h()
-            .partial_cmp(&other.h())
+        self.cached_heuristic()
+            .partial_cmp(&other.cached_heuristic())
     }
 }
 impl Ord for Board {
@@ -85,29 +85,8 @@ impl Castle {
 }
 
 type Positions<'a> = Box<dyn Iterator<Item = Position> + 'a>;
-// #[thiserror]
-// enum MoveError {
-//     #[error("There was no pice on the given square")],
-//     NoPice,
-//     #[error("Pan")]
-// }
 
 impl Board {
-    pub fn init_piece_tracker(&mut self) {
-        for i in 0..8 {
-            for j in 0..8 {
-                match self[(i, j)] {
-                    Some(piece) if piece.color == Black => {
-                        self.pieces.black.push((i, j));
-                    }
-                    Some(_) => {
-                        self.pieces.white.push((i, j));
-                    }
-                    None => (),
-                }
-            }
-        }
-    }
     pub fn h(&self) -> f32 {
         self.previous_score + self.diff_score - self.opponent_score
     }
@@ -131,16 +110,17 @@ impl Board {
     /// jumps more that one square. Invalid king moves are
     /// cause of undefined behavior.
     #[inline]
-    fn apply_king_move(&mut self, piece: Option<Piece>, Move { from, to }: Move) {
+    fn apply_king_move(&mut self, Move { from, to }: Move) {
         let dir = to.file - from.file;
         if dir.abs() > 1 {
-            let (from_file, to_file) = if dir.is_negative() { (0, 2) } else { (7, 5) };
+            let (from_file, to_file) = if dir.is_negative() { (0, 3) } else { (7, 5) };
             let from_rank = from.rank;
-            let rook = self[(from_rank, from_file)].take();
-            self[(from_rank, to_file)] = rook;
+            let mv = Move {
+                from: (from_rank, from_file).into(),
+                to: (from_rank, to_file).into(),
+            };
+            self._move_noncapture(mv);
         }
-
-        self[to] = piece;
         match self.turn {
             Black => self.black = Castle::no_castle(),
             White => self.white = Castle::no_castle(),
@@ -152,7 +132,6 @@ impl Board {
         self.moves().for_each(|mv| {
             let mut child = self.clone();
             child.apply_unchecked(mv);
-            child.advance_turn();
             children.push((child, mv));
         });
         children
@@ -165,7 +144,7 @@ impl Board {
         self.moves().for_each(|mv| {
             let mut child = self.clone();
             child.apply_unchecked(mv);
-            child.advance_turn();
+
             if mv.to == self.last {
                 children.insert(0, child);
             } else {
@@ -174,235 +153,105 @@ impl Board {
         });
         children
     }
+
     /// It computes the full heuristic.
     #[inline]
     pub fn heuristic(&self, params: &Params) -> f32 {
-        let mut h_white = 0.0;
-        let mut h_black = 0.0;
-        let mut white_king = -500.0;
-        let mut black_king = -500.0;
-        for i in 0..8 {
-            for j in 0..8 {
-                match self[(i, j)] {
-                    Some(piece) if piece.color == White => {
-                        h_white += params.piece_value((piece, (i, j).into()));
-                        if piece.kind == King {
-                            white_king = 0.0;
-                        }
-                    }
-                    Some(piece) if piece.color == Black => {
-                        h_black += params.piece_value((piece, (i, j).into()));
-                        if piece.kind == King {
-                            black_king = 0.0;
-                        }
-                    }
-                    _ => (),
-                }
-            }
-        }
-        h_white += if self.white.kingside {
-            params.castle_kingside
-        } else {
-            0.0
-        };
-        h_white += if self.white.queenside {
-            params.castle_queenside
-        } else {
-            0.0
-        };
-        h_black += if self.black.kingside {
-            params.castle_kingside
-        } else {
-            0.0
-        };
-        h_black += if self.black.queenside {
-            params.castle_queenside
-        } else {
-            0.0
-        };
-        h_white + white_king - h_black - black_king
-    }
-    /// it computes the children along with a one sided heuristic
-    /// (only for the current player).
-    #[inline]
-    fn h_children(&self, params: &Params) -> ArrayVec<Self, 128> {
-        let mut opp = 0.0;
-        let mut children = ArrayVec::new();
-
-        self.unfiltered_moves_for(self.turn)
-            .for_each(|mv| {
-                let mut child = self.clone();
-                let piece = self[mv.from].unwrap();
-                match self[mv.to] {
-                    Some(defeded) if defeded.color == self.turn => {
-                        opp += params.defended(defeded, piece, mv);
-                        return;
-                    }
-                    Some(_) | None => {
-                        let capture = child.apply_unchecked(mv);
-                        if let Some(capture) = capture {
-                            opp += params.attacked(capture, piece, mv);
-                            child.diff_score += params.value((capture, mv.to));
-                        } else {
-                            opp += params.mov(piece, mv);
-                        }
-                        opp += params.available_moves;
-                    }
-                }
-                children.push(child.clone());
-            });
-
-        for child in &mut children {
-            child.previous_score = child.opponent_score;
-            child.opponent_score = opp;
-        }
-
-        children
-    }
-
-    pub fn monte_carlo(&self, params: &Params, depth: usize, mut alpha: f32, mut beta: f32) -> f32 {
         let mut h = 0.0;
-
-        if depth == params.max_depth {
-            return self.heuristic(params);
-        }
-
-        let mut children = self.children();
-
-        let explore = children.len() * (params.max_depth - depth) / params.max_depth;
-
-        if let White = self.turn {
-            let mut max = f32::NEG_INFINITY;
-
-            for _ in 0..explore {
-                let child = children
-                    .pop_at(rand::random::<usize>() % children.len())
-                    .unwrap();
-                let score = child.monte_carlo(params, depth + 1, alpha, beta);
-                max = max.max(score);
-                alpha = alpha.max(score);
-                if beta <= alpha {
-                    break;
-                }
+        let mut white_king = f32::NEG_INFINITY;
+        let mut black_king = f32::NEG_INFINITY;
+        for piece in self.colored_pieces(White) {
+            h += params.piece_value(piece);
+            if piece.0.kind == King {
+                white_king = 0.0;
             }
-
-            alpha
-        } else {
-            let mut min = f32::INFINITY;
-
-            for _ in 0..explore {
-                let child = children
-                    .pop_at(rand::random::<usize>() % children.len())
-                    .unwrap();
-                let score = child.monte_carlo(params, depth + 1, alpha, beta);
-                min = min.min(score);
-                beta = beta.min(score);
-                if beta <= alpha {
-                    break;
-                }
-            }
-            beta
         }
+        for piece in self.colored_pieces(Black) {
+            h -= params.piece_value(piece);
+            if piece.0.kind == King {
+                black_king = 0.0;
+            }
+        }
+        h += self.white.kingside as i8 as f32 * params.castle_kingside;
+        h += self.white.queenside as i8 as f32 * params.castle_queenside;
+        h -= self.black.kingside as i8 as f32 * params.castle_kingside;
+        h -= self.black.queenside as i8 as f32 * params.castle_queenside;
+        h + white_king - black_king
     }
 
-    pub fn random_move(&mut self) {
-        let moves: ArrayVec<_, 128> = self
-            .moves()
-            .pipe(ArrayVec::from_iter);
-        let mov = rand::random::<usize>() % moves.len();
-        self.apply_unchecked(moves[mov]);
+    pub fn play_random(&mut self, params: &Params) {
+        let children = self.children_heuristic(params);
+        let index = rand::random::<usize>() % children.len();
+        *self = children[index].clone().0;
     }
 
     #[inline]
     pub fn remove_castle_rights(&mut self, Move { from, to }: Move) {
-        let backrank = [0, 7].contains(&from.rank) || [0, 7].contains(&to.rank);
-
-        if backrank {
-            match self.turn {
-                // if a rook moves
-                Black if from.file == 0 => self.black.queenside = false,
-                White if from.file == 0 => self.white.queenside = false,
-                Black if from.file == 7 => self.black.kingside = false,
-                White if from.file == 7 => self.white.kingside = false,
-                // if a rook gets captured
-                Black if to.file == 0 => self.black.queenside = false,
-                White if to.file == 0 => self.white.queenside = false,
-                Black if to.file == 7 => self.black.kingside = false,
-                White if to.file == 7 => self.white.kingside = false,
-                _ => (),
-            }
+        match from.rank {
+            // if a rook moves
+            0 if from.file == 0 => self.black.queenside = false,
+            7 if from.file == 0 => self.white.queenside = false,
+            0 if from.file == 7 => self.black.kingside = false,
+            7 if from.file == 7 => self.white.kingside = false,
+            _ => (),
+        }
+        match to.rank {
+            // if a rook gets captured
+            0 if to.file == 0 => self.black.queenside = false,
+            7 if to.file == 0 => self.white.queenside = false,
+            0 if to.file == 7 => self.black.kingside = false,
+            7 if to.file == 7 => self.white.kingside = false,
+            _ => (),
         }
     }
 
     #[inline]
-    pub fn apply_pawn_move(
-        &mut self,
-        mut piece: Option<Piece>,
-        Move { from, to }: Move,
-        captured: &mut Option<Piece>,
-    ) {
-        // if to piece was taken in a diagonal move
-        // this implies that a en passant pawn was captured
-        // When moving straight this does nothing.
-        *captured = self[to].or_else(|| {
-            let mut to = to;
-            to.rank -= self.turn.pawn_dir();
-            self[to].take()
-        });
+    pub fn apply_pawn_move(&mut self, Move { from, to }: Move) {
         // promote to queen if we reach the last rank
         if to.rank == self.turn.promotion_rank() {
-            piece = Some(self.turn | Queen);
+            self[to] = Some(self.turn | Queen);
         }
 
-        self[to] = piece;
         // if we do a two square move we are vulnerable to
         // the passant rule
         if from.rank + 2 == to.rank {
             self.passant = Some(to);
-        } else {
-            self.passant = None;
+            return;
         }
+
+        let pnt = {
+            match self.passant {
+                Some(pnt) => pnt,
+                _ => {
+                    self.passant = None;
+                    return;
+                }
+            }
+        };
+        if pnt.file == to.file && from.rank == pnt.rank {
+            self.remove_piece(pnt);
+        }
+        self.passant = None;
     }
     /// This function performs no checks at all.  
     /// This is intended for fast computations.
     /// On invalid inputs its behavior is erratic.
     #[inline]
     pub fn apply_unchecked(&mut self, mov: Move) -> Option<Piece> {
-        let Move { from, to } = mov;
-        let piece = self[from].take();
-        let mut captured = self[to];
-        let x = match piece.map(|x| x.kind) {
-            Some(Pawn) => self.apply_pawn_move(piece, mov, &mut captured),
-            Some(Queen | Bishop | Knight | Rook) => {
+        let (piece, capture) = self._move_capture(mov);
+
+        match piece.kind {
+            Pawn => self.apply_pawn_move(mov),
+            Queen | Bishop | Knight | Rook => {
                 self.passant = None;
-                self[to] = piece;
             }
-            Some(King) => {
-                self.passant = None;
-                self.apply_king_move(piece, mov);
-            }
-            None => {
-                self.colored_pieces(self.turn)
-                    .map(|(piece, pos)| {
-                        self.moves_for_piece(pos)
-                            .for_each(|mv| {
-                                log::debug!("mv: {mv:?} {piece:?}");
-                                if mv == mov {
-                                    log::error!(
-                                        "Bug on impl for {:?}, got invalid move {mv:?}.",
-                                        piece.kind
-                                    )
-                                }
-                            })
-                    })
-                    .for_each(|_| {});
-                unreachable!("{self}\n{mov:?}")
-            }
+            King => self.apply_king_move(mov),
         };
         self.remove_castle_rights(mov);
-        captured
+        self.advance_turn();
+        capture
     }
-
+    // TODO: Remove Params::default
     pub fn apply(&mut self, mov: Move) -> Result<(), ()> {
         let correct_turn = {
             match self[mov.from] {
@@ -410,13 +259,14 @@ impl Board {
                 _ => false,
             }
         };
-        let is_valid = self
-            .moves_for_piece(mov.from)
-            .contains(&mov);
-        let castle = self.check_castle(mov);
+        let (child, _) = self
+            .children_heuristic(&Params::default())
+            .into_iter()
+            .find(|(_, m)| *m == mov)
+            .ok_or(())?;
 
-        if correct_turn && is_valid && castle {
-            self.apply_unchecked(mov);
+        if correct_turn && self.check_castle(mov) {
+            *self = child;
             Ok(())
         } else {
             Err(())
@@ -457,79 +307,75 @@ impl Board {
 
         let mut out = 0;
         while let Some(node) = heap.pop() {
-            let children = node.h_children(params);
+            let children = node.children_heuristic(params);
 
             for child in children {
-                heap.push(child);
+                heap.push(child.0);
             }
 
-            if heap.len() >= 5000 {
-                // log::debug!("DROPPING");
-                // log::debug!("init len {}", heap.len());
+            if heap.len() >= 10_000 {
                 let mut sum = 0.0;
                 let mut total = 0;
                 heap.retain(|b| {
                     total += 1;
-                    sum += b.h();
-                    b.h() > sum / total as f32
+                    sum += b.cached_heuristic();
+                    b.cached_heuristic() > sum / total as f32
                 });
-                
             }
-            if out == 1000 {
+            if out == params.max_iter {
                 break;
             }
             out += 1;
         }
-        let len = heap.len(); 
-        let out = heap.into_iter()
-            .map(|board| {
-                board.heuristic(params)
-            })
-            .sum::<f32>() / len as f32; 
-            // log::info!("{self}"); 
-            // log::info!("h: {out}"); 
-            out
-
+        let len = heap.len();
+        let out = heap
+            .into_iter()
+            .map(|board| board.heuristic(params))
+            .sum::<f32>()
+            / len as f32;
+        out
     }
 
-    // TODO: cleanup
-    pub fn play_with(&self, params: &Params) -> Option<Move> {
-        let moves = self
-            .children_moves()
-            .into_iter();
-        let mut sorted: ArrayVec<_, 128> = ArrayVec::from_iter(moves);
+    fn _play_with_algorithm(
+        &mut self,
+        params: &Params,
+        al: fn(&Self, &Params, i32, f32, f32, &mut Stats) -> f32,
+    ) -> Option<f32> {
+        let turn = self.turn.pawn_dir() as f32;
+        let mut children = self.children_heuristic(params);
 
-        if !params.monte_carlo.used {
-            sorted.sort_by_key(|(child, _)| {
-                child
-                    .minimax(
-                        params,
-                        params.max_depth as i32,
-                        f32::NEG_INFINITY,
-                        f32::INFINITY,
-                    )
-                    .pipe(FloatOrd)
-            });
-        } else {
-            sorted.sort_by_key(|(child, _)| {
-                child
-                    .a_star(params)
-                    .pipe(FloatOrd)
-            });
-        }
+        children.sort_by_key(|(b, _)| FloatOrd(b.cached_heuristic() * turn));
 
-        // CLEANUP
-        let (first, second) = {
-            if self.turn == White {
-                (sorted.last()?.1, sorted.get(sorted.len() - 2))
-            } else {
-                (sorted.first()?.1, sorted.get(1))
+        let mut score = f32::INFINITY;
+        let ref mut s = Stats::default();
+        let mut alpha = f32::NEG_INFINITY;
+        let mut beta = f32::INFINITY;
+
+        children.sort_by_key(|(child, _)| {
+            let value = al(child, params, params.max_depth as i32, alpha, beta, s);
+
+            match self.turn {
+                White => alpha = alpha.max(value),
+                Black => beta = beta.min(value),
             }
-        };
-        if self.check_castle(first) {
-            Some(first)
-        } else {
-            Some(second?.1)
+            score = value.min(turn * value);
+            FloatOrd(turn * value)
+        });
+
+        debug!("depths: {s:#?}");
+        for (child, mov) in children {
+            if self.check_castle(mov) {
+                *self = child;
+                return Some(turn * score);
+            }
+        }
+        None
+    }
+
+    pub fn play_with(&mut self, params: &Params) -> Option<f32> {
+        match params.algorithm(self.turn) {
+            Algorithm::AlphaBetaPruning => self._play_with_algorithm(params, Self::minimax),
+            Algorithm::Prepruning => self._play_with_algorithm(params, Self::prepruning),
         }
     }
 
@@ -556,31 +402,105 @@ impl Board {
         self.moves_for(by)
             .any(|mv| pos.contains(&mv.to))
     }
-
-    fn minimax(&self, params: &Params, depth: i32, mut alpha: f32, mut beta: f32) -> f32 {
+    fn prepruning(
+        &self,
+        params: &Params,
+        depth: i32,
+        mut alpha: f32,
+        mut beta: f32,
+        s: &mut Stats,
+    ) -> f32 {
+        s.explored[params.max_depth - depth as usize] += 1;
         if depth == 0 {
-            self.heuristic(params)
+            return self.cached_heuristic();
+        }
+        if let White = self.turn {
+            let mut max = f32::NEG_INFINITY;
+            let mut children = self.children_heuristic(params);
+            if depth > params.sort_depth {
+                children.sort_by_key(|(b, _)| FloatOrd(-b.cached_heuristic()));
+            }
+            for (child, _) in &children {
+                max = max.max(child.cached_heuristic() - params.tolerance(depth));
+                alpha = alpha.max(max);
+                if beta <= alpha {
+                    s.prepruned[params.max_depth - depth as usize] += 1;
+                    break;
+                }
+
+                let score = child.prepruning(params, depth - 1, alpha, beta, s);
+                max = max.max(score);
+                alpha = alpha.max(score);
+                if beta <= alpha {
+                    s.pruned[params.max_depth - depth as usize] += 1;
+                    break;
+                }
+            }
+            max
+        } else {
+            let mut min = f32::INFINITY;
+            let mut children = self.children_heuristic(params);
+            if depth > params.sort_depth {
+                children.sort_by_key(|(b, _)| FloatOrd(b.cached_heuristic()));
+            }
+            for (child, _) in &children {
+                min = min.min(child.cached_heuristic() + params.tolerance(depth));
+                beta = beta.min(min);
+                if beta <= alpha {
+                    s.prepruned[params.max_depth - depth as usize] += 1;
+                    break;
+                }
+
+                let score = child.prepruning(params, depth - 1, alpha, beta, s);
+                min = min.min(score);
+                beta = beta.min(score);
+                if beta <= alpha {
+                    s.pruned[params.max_depth - depth as usize] += 1;
+                    break;
+                }
+            }
+            min
+        }
+    }
+
+    fn minimax(
+        &self,
+        params: &Params,
+        depth: i32,
+        mut alpha: f32,
+        mut beta: f32,
+        s: &mut Stats,
+    ) -> f32 {
+        s.explored[params.max_depth - depth as usize] += 1;
+        if depth == 0 {
+            self.cached_heuristic()
         } else if let White = self.turn {
             let mut max = f32::NEG_INFINITY;
-            self.children()
-                .iter()
-                .for_each(|child| {
-                    let score = child.minimax(params, depth - 1, alpha, beta);
-                    max = max.max(score);
-                    alpha = alpha.max(score);
-                    if beta <= alpha {}
-                });
+            let children = self.children_heuristic(params);
+
+            for (child, _) in &children {
+                let score = child.minimax(params, depth - 1, alpha, beta, s);
+                max = max.max(score);
+                alpha = alpha.max(score);
+                if beta <= alpha {
+                    s.pruned[params.max_depth - depth as usize] += 1;
+                    break;
+                }
+            }
             alpha
         } else {
             let mut min = f32::INFINITY;
-            self.children()
-                .iter()
-                .for_each(|child| {
-                    let score = child.minimax(params, depth - 1, alpha, beta);
-                    min = min.min(score);
-                    beta = beta.min(score);
-                    if beta <= alpha {}
-                });
+            let children = self.children_heuristic(params);
+
+            for (child, _) in &children {
+                let score = child.minimax(params, depth - 1, alpha, beta, s);
+                min = min.min(score);
+                beta = beta.min(score);
+                if beta <= alpha {
+                    s.pruned[params.max_depth - depth as usize] += 1;
+                    break;
+                }
+            }
             beta
         }
     }
@@ -600,17 +520,17 @@ impl Board {
     /// filtering over the provided color.
     /// They are provided in the order of least valuable to
     /// most valuable.
-    pub fn colored_pieces(&self, color: Color) -> impl Iterator<Item = (Piece, Position)> + '_ {
-        let mut vec: ArrayVec<_, 16> = (0..8)
-            .flat_map(|rank| (0..8).map(move |file| (rank, file)))
-            .map(Position::from)
-            .filter_map(move |pos| (self[pos]?, pos).pipe(Some))
-            .filter(move |(piece, _)| piece.color == color)
-            .pipe(|iter| ArrayVec::from_iter(iter));
+    // pub fn colored_pieces(&self, color: Color) -> impl Iterator<Item = (Piece, Position)> + '_ {
+    //     let mut vec: ArrayVec<_, 16> = (0..8)
+    //         .flat_map(|rank| (0..8).map(move |file| (rank, file)))
+    //         .map(Position::from)
+    //         .filter_map(move |pos| (self[pos]?, pos).pipe(Some))
+    //         .filter(move |(piece, _)| piece.color == color)
+    //         .pipe(|iter| ArrayVec::from_iter(iter));
 
-        vec.sort();
-        vec.into_iter()
-    }
+    //     vec.sort();
+    //     vec.into_iter()
+    // }
     pub fn moves(&self) -> impl Iterator<Item = Move> + '_ {
         self.colored_pieces(self.turn)
             .map(|(_, pos)| pos)
@@ -758,9 +678,12 @@ impl Board {
             let is_clear = castle.queenside
                 && self[(rank, 1)].is_none()
                 && self[(rank, 2)].is_none()
-                && self[(rank, 3)].is_none();
+                && self[(rank, 3)].is_none()
+                && self[(rank, 0)]
+                    .map(|r| r.kind == Rook)
+                    .unwrap_or(false);
             if is_clear {
-                self.relative(pos, 0, -3)
+                self.relative(pos, 0, -2)
             } else {
                 None
             }
