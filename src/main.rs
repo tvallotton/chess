@@ -12,6 +12,7 @@ mod moves;
 mod opt;
 mod parameters;
 mod piece;
+
 mod piece_tracker;
 mod queue;
 mod start_board;
@@ -20,10 +21,12 @@ mod train;
 fn main() {
     #[cfg(target_family = "wasm")]
     wasm_logger::init(Default::default());
+    
     #[cfg(target_family = "wasm")]
     web::main();
 
-
+    
+    
 
     
     

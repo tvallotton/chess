@@ -12,9 +12,10 @@ use std::{ops::Index, str::FromStr};
 
 use Kind::*;
 
-#[derive(Debug, Deserialize,Serialize,  Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Params {
-    pub sort_depth: i32, 
+    pub sort_depth: i32,
+    pub presort_depth: i32,
     pub max_iter: i32,
     pub piece_value: f32,
     pub mov_value: f32,
@@ -33,7 +34,6 @@ pub struct Params {
     pub rook: ValueTable,
     pub black_algorithm: Algorithm,
     pub white_algorithm: Algorithm,
-    pub tolerance: Vec<f32>,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
@@ -45,10 +45,8 @@ pub enum Algorithm {
 fn random() -> f32 {
     rand::random()
 }
-const LEARNING_RATE: f32 = 1.0; 
+const LEARNING_RATE: f32 = 1.0;
 impl Params {
-    
-
     pub fn split(&self) -> (Params, Params) {
         let mut pos = self.clone();
         let mut neg = self.clone();
@@ -69,19 +67,15 @@ impl Params {
         pos.castle_queenside += r * LEARNING_RATE;
         neg.castle_queenside -= r * LEARNING_RATE;
 
-        let r = random(); 
-        pos.available_moves += r * LEARNING_RATE; 
-        neg.available_moves -= r * LEARNING_RATE; 
+        let r = random();
+        pos.available_moves += r * LEARNING_RATE;
+        neg.available_moves -= r * LEARNING_RATE;
 
-        let r = random(); 
-        pos.mov_value += r * LEARNING_RATE; 
-        neg.mov_value -= r * LEARNING_RATE; 
+        let r = random();
+        pos.mov_value += r * LEARNING_RATE;
+        neg.mov_value -= r * LEARNING_RATE;
 
         (neg, pos)
-    }
-
-    pub fn tolerance(&self, depth: i32) -> f32 {
-        self.tolerance[self.max_depth - depth as usize]
     }
 
     pub fn algorithm(&self, color: Color) -> Algorithm {
@@ -96,16 +90,11 @@ impl Params {
     }
 
     pub fn attacked(&self, attacked: Piece, by: Piece, mov: Move) -> f32 {
-        self.attacked * self.value((attacked, mov.to)) / (self.value((by, mov.from)))
+        self.attacked * 0.0f32.max(self.value((attacked, mov.to)) - self.value((by, mov.from)))
     }
 
     pub fn defended(&self, defended: Piece, by: Piece, Move { to: _, from }: Move) -> f32 {
-        self.defended * 1.0
-            / (1.0
-                + self.value((by, from))
-                    * self
-                        .value((defended, from))
-                        .powi(2))
+        self.defended * 0.0f32.max(self.value((by, from)) - self.value((defended, from)))
     }
     pub fn mov(&self, piece: Piece, mov: Move) -> f32 {
         self.mov_value / (self.value((piece, mov.to)) + 1.0)

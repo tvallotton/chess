@@ -20,7 +20,6 @@ use Kind::*;
 #[derive(Debug, Clone, Copy, Default)]
 struct Stats {
     explored: [i32; 10],
-    prepruned: [i32; 10],
     pruned: [i32; 10],
 }
 
@@ -98,8 +97,8 @@ impl Board {
             black: Castle::default(),
             white: Castle::default(),
             last: (4, 3).into(),
-            previous_score: 0.0,
-            opponent_score: 0.0,
+            previous_score: 52.3,
+            opponent_score: 52.3,
             diff_score: 0.0,
             pieces: Default::default(),
         }
@@ -343,8 +342,18 @@ impl Board {
     ) -> Option<f32> {
         let turn = self.turn.pawn_dir() as f32;
         let mut children = self.children_heuristic(params);
-
-        children.sort_by_key(|(b, _)| FloatOrd(b.cached_heuristic() * turn));
+        let ref mut s = Stats::default();
+        children.sort_by_key(|(b, _)| {
+            let value = al(
+                b,
+                params,
+                params.presort_depth,
+                f32::NEG_INFINITY,
+                f32::INFINITY,
+                s,
+            );
+            FloatOrd(value * turn)
+        });
 
         let mut score = f32::INFINITY;
         let ref mut s = Stats::default();
@@ -355,8 +364,8 @@ impl Board {
             let value = al(child, params, params.max_depth as i32, alpha, beta, s);
 
             match self.turn {
-                White => alpha = alpha.max(value),
-                Black => beta = beta.min(value),
+                White => alpha = alpha.min(value),
+                Black => beta = beta.max(value),
             }
             score = value.min(turn * value);
             FloatOrd(turn * value)
@@ -373,10 +382,14 @@ impl Board {
     }
 
     pub fn play_with(&mut self, params: &Params) -> Option<f32> {
-        match params.algorithm(self.turn) {
-            Algorithm::AlphaBetaPruning => self._play_with_algorithm(params, Self::minimax),
-            Algorithm::Prepruning => self._play_with_algorithm(params, Self::prepruning),
+        let moves = self.play_with_minimax(params);
+        log::info!("moves: {moves:#?}");
+        for (score, mov) in moves {
+            if self.apply(mov).is_ok() {
+                return Some(score * self.turn.pawn_dir() as f32);
+            }
         }
+        None
     }
 
     fn check_castle(&self, mov: Move) -> bool {
@@ -386,7 +399,8 @@ impl Board {
         let is_long = (mov.from.file - mov.to.file).abs() > 1;
 
         if is_king && is_long {
-            let range = mov.from.file..(mov.to.file + 1);
+            let (from, to) = (mov.from.file, mov.to.file);
+            let range = from.min(to)..(from.max(to) + 1);
             let pos = range
                 .into_iter()
                 .map(|file| (mov.from.rank, file))
@@ -402,7 +416,8 @@ impl Board {
         self.moves_for(by)
             .any(|mv| pos.contains(&mv.to))
     }
-    fn prepruning(
+
+    fn minimax(
         &self,
         params: &Params,
         depth: i32,
@@ -411,24 +426,18 @@ impl Board {
         s: &mut Stats,
     ) -> f32 {
         s.explored[params.max_depth - depth as usize] += 1;
-        if depth == 0 {
-            return self.cached_heuristic();
-        }
-        if let White = self.turn {
+        if depth <= 0 {
+            self.cached_heuristic()
+        } else if let White = self.turn {
             let mut max = f32::NEG_INFINITY;
             let mut children = self.children_heuristic(params);
-            if depth > params.sort_depth {
-                children.sort_by_key(|(b, _)| FloatOrd(-b.cached_heuristic()));
+            if depth >= params.sort_depth {
+                children.sort_by_key(|(b, _)| {
+                    FloatOrd(-b.cached_heuristic())
+                });
             }
             for (child, _) in &children {
-                max = max.max(child.cached_heuristic() - params.tolerance(depth));
-                alpha = alpha.max(max);
-                if beta <= alpha {
-                    s.prepruned[params.max_depth - depth as usize] += 1;
-                    break;
-                }
-
-                let score = child.prepruning(params, depth - 1, alpha, beta, s);
+                let score = child.minimax(params, depth - 1, alpha, beta, s);
                 max = max.max(score);
                 alpha = alpha.max(score);
                 if beta <= alpha {
@@ -440,18 +449,13 @@ impl Board {
         } else {
             let mut min = f32::INFINITY;
             let mut children = self.children_heuristic(params);
-            if depth > params.sort_depth {
-                children.sort_by_key(|(b, _)| FloatOrd(b.cached_heuristic()));
+            if depth >= params.sort_depth {
+                children.sort_by_key(|(b, _)| {
+                    FloatOrd(b.cached_heuristic())
+                });
             }
             for (child, _) in &children {
-                min = min.min(child.cached_heuristic() + params.tolerance(depth));
-                beta = beta.min(min);
-                if beta <= alpha {
-                    s.prepruned[params.max_depth - depth as usize] += 1;
-                    break;
-                }
-
-                let score = child.prepruning(params, depth - 1, alpha, beta, s);
+                let score = child.minimax(params, depth - 1, alpha, beta, s);
                 min = min.min(score);
                 beta = beta.min(score);
                 if beta <= alpha {
@@ -462,47 +466,45 @@ impl Board {
             min
         }
     }
-
-    fn minimax(
-        &self,
-        params: &Params,
-        depth: i32,
-        mut alpha: f32,
-        mut beta: f32,
-        s: &mut Stats,
-    ) -> f32 {
-        s.explored[params.max_depth - depth as usize] += 1;
-        if depth == 0 {
-            self.cached_heuristic()
-        } else if let White = self.turn {
-            let mut max = f32::NEG_INFINITY;
-            let children = self.children_heuristic(params);
-
-            for (child, _) in &children {
-                let score = child.minimax(params, depth - 1, alpha, beta, s);
-                max = max.max(score);
-                alpha = alpha.max(score);
-                if beta <= alpha {
-                    s.pruned[params.max_depth - depth as usize] += 1;
-                    break;
-                }
-            }
-            alpha
+    #[allow(unused_mut)]
+    fn play_with_minimax(&self, params: &Params) -> Vec<(f32, Move)> {
+        let mut children = self.children_heuristic(params);
+        let mut alpha = f32::NEG_INFINITY;
+        let mut beta = f32::INFINITY;
+        let ref mut s = Stats::default();
+        let depth = params.max_depth as i32;
+        let mut moves = if let White = self.turn {
+            // if depth > params.sort_depth {
+            //     children.sort_by_cached_key(|(b, _)| {
+            //         FloatOrd(-b.minimax(params, depth - 1 - params.presort_depth, alpha, beta, s))
+            //     });
+            // }
+            children
+                .into_iter()
+                .map(|(child, mov)| {
+                    let score = child.minimax(params, depth, alpha, beta, s);
+                    // alpha = alpha.max(score);
+                    (-score, mov)
+                })
+                .collect_vec()
         } else {
-            let mut min = f32::INFINITY;
-            let children = self.children_heuristic(params);
-
-            for (child, _) in &children {
-                let score = child.minimax(params, depth - 1, alpha, beta, s);
-                min = min.min(score);
-                beta = beta.min(score);
-                if beta <= alpha {
-                    s.pruned[params.max_depth - depth as usize] += 1;
-                    break;
-                }
-            }
-            beta
-        }
+            // if depth > params.sort_depth {
+            //     children.sort_by_cached_key(|(b, _)| {
+            //         FloatOrd(b.minimax(params, depth - 1 - params.presort_depth, alpha, beta, s))
+            //     });
+            // }
+            children
+                .into_iter()
+                .map(|(child, mov)| {
+                    let score = child.minimax(params, depth, alpha, beta, s);
+                    // beta = beta.min(score);
+                    (score, mov)
+                })
+                .collect()
+        };
+        log::info!("state: {s:#?}");
+        moves.sort_unstable_by_key(|(score, _)| FloatOrd(*score));
+        moves
     }
 
     /// Gets a piece from a position

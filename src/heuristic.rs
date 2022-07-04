@@ -10,11 +10,12 @@ impl Board {
     #[inline]
     fn castle_heuristic(&self, params: &Params) -> f32 {
         let mut h = 0.0;
+        let turn = -self.turn.pawn_dir() as f32; 
         h += self.white.kingside as i8 as f32 * params.castle_kingside;
         h += self.white.queenside as i8 as f32 * params.castle_queenside;
         h -= self.black.kingside as i8 as f32 * params.castle_kingside;
         h -= self.black.queenside as i8 as f32 * params.castle_queenside;
-        h
+        turn * h
     }
     /// Computes the material heuristic for the given player.
     /// The value is greater when the selected player has more material.
@@ -53,6 +54,8 @@ impl Board {
                             child.diff_score -= params.piece_value((target, mov.to));
                             child.diff_score -= params.piece_value((piece, mov.to));
                             child.diff_score += params.piece_value((piece, mov.from));
+                            child.diff_score += child.castle_heuristic(params); 
+                            h += params.available_moves;
                             if target.kind == King {
                                 child.diff_score -= f32::INFINITY
                             }
@@ -63,9 +66,11 @@ impl Board {
                         }
                         None => {
                             h += params.mov(piece, mov);
+                            h += params.available_moves;
+                            child.apply_unchecked(mov);
                             child.diff_score -= params.piece_value((piece, mov.to));
                             child.diff_score += params.piece_value((piece, mov.from));
-                            child.apply_unchecked(mov);
+                            child.diff_score += child.castle_heuristic(params); 
                         }
                     }
                     children.push((child, mov));
