@@ -1,0 +1,13 @@
+<svg version="1.1"
+     width="400" height="500"
+     xmlns="http://www.w3.org/2000/svg">
+
+
+  <rect width="1000" height="1000" fill="black"/>
+  <circle cx="160" cy="120" r="86" fill="white" />
+  <rect width="188" height="48" x="66" y="180" rx="10" ry="10" fill="white" />
+  
+  <circle cx="160" cy="120" r="80" fill="black" />
+  <rect width="180" height="40" x="70" y="184" rx="10" ry="10" fill="black" />
+
+</svg>

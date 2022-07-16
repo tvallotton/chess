@@ -118,7 +118,7 @@ impl Default for Params {
         //     .pipe(serde_json::from_str)
         //     .unwrap();
         // settings.absolute_params
-        include_str!("../params.json")
+        include_str!("../../params.json")
             .pipe(serde_json::from_str)
             .unwrap()
     }

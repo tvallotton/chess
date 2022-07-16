@@ -1,3 +1,9 @@
+[workspace]
+members = ["engine", "."]
+
+[profile.release]
+panic = "abort"
+
 [package]
 name = "chess"
 version = "0.1.0"
@@ -6,29 +12,19 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-itertools = "0.10.3"
-log = "0.4.16"
-serde = { version = "1.0.137", features = ["derive"] }
-serde_json = "1.0.79"
-tap = "1.0.1"
-structopt = "0.3.26"
-
-# [target.'cfg(target_family="wasm")'.dependencies]
-wasm-logger = "0.2.0"
-yew = "0.19.3"
+log = "0.4.17"
+engine = { path = "engine" }
+dioxus-html-macro = { version = "0.2.0" }
+# dioxus-html-macro = { git = "https://github.com/DioxusLabs/dioxus-html-macro", version = "0.1.0" }
 
 
-# CLI
-# [target.'cfg(not(target_family="wasm"))'.dependencies]
+[target.'cfg(not(target_arch= "wasm32"))'.dependencies]
+clap = { version = "3.2.8", features = ["derive"] }
+dioxus = { version = "0.2.4", features = ["desktop", "router", "tui"] }
 pretty_env_logger = "0.4.0"
-yew-router = "0.16.0"
-arrayvec = "0.7.2"
-float-ord = "0.3.2"
-# rand = "0.8.5"
-getrandom = { version = "0.2.4", features = ["js"] }
-rand = "0.8.5"
-rayon = "1.5.3"
-instant = "0.1.12"
 
+[target.'cfg(target_arch= "wasm32")'.dependencies]
+wasm-logger = "0.2.0"
+dioxus = { version = "0.2.4", features = ["web", "router"] }
 
 # WASM

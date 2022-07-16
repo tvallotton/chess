@@ -1,8 +1,8 @@
 use std::{fmt::Display, ops::BitOr, str::FromStr};
 
+use serde::Deserialize;
 pub use Color::*;
 pub use Kind::*;
-use serde::Deserialize;
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Piece {
     pub kind: Kind,
@@ -19,7 +19,7 @@ pub enum Kind {
     King,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
-#[serde(rename_all= "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum Color {
     Black,
     White,
@@ -81,6 +81,12 @@ impl Color {
         match self {
             Black => 1,
             White => -1,
+        }
+    }
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Black => "balck", 
+            White => "white",
         }
     }
 }

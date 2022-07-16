@@ -1,35 +1,34 @@
-#![doc = include_str!("../readme.md")]
-#![allow(dead_code)]
-#![warn(unused_crate_dependencies)]
-#![feature(binary_heap_retain)]
+#![allow(non_upper_case_globals)]
+#[macro_use]
+extern crate dioxus_html_macro;
 
-use crate::piece::Color;
+#[cfg(not(target_arch = "wasm32"))]
+use clap::*;
+use dioxus::prelude::*;
 
+use app::App;
+use menu::Menu;
+use play::Play;
+
+mod app;
 mod board;
-mod cli;
-mod heuristic;
-mod moves;
-mod opt;
-mod parameters;
-mod piece;
+mod button;
+mod menu;
+mod play;
+mod square;
 
-mod piece_tracker;
-mod queue;
-mod start_board;
-mod web;
-mod train; 
 fn main() {
-    #[cfg(target_family = "wasm")]
-    wasm_logger::init(Default::default());
-    
-    #[cfg(target_family = "wasm")]
-    web::main();
-
-    
-    
-
-    
-    
-
-    
+    #[cfg(target_arch = "wasm32")]
+    {
+        wasm_logger::init(Default::default());
+        dioxus::web::launch(App);
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        pretty_env_logger::init();
+        dioxus::desktop::launch_cfg(App, |config| {
+            config.with_custom_index(include_str!("../index.html").into())
+        })
+    }
 }
+

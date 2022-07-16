@@ -3,9 +3,9 @@ use std::str::FromStr;
 use crate::{parameters::Params, piece::Color};
 
 use serde::Deserialize;
-use structopt::StructOpt;
 
-#[derive(StructOpt)]
+
+
 pub struct Opt {
     pub settings: Option<serde_json::Value>,
 }
