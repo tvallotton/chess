@@ -25,7 +25,6 @@ pub const Square: Component<Props> = |s| {
     s.render(html! {
         <div
             class = "square {color} {selected} {highlighted}"
-            background_color="{color}"
             width="50px"
             height="50px"
         >
@@ -36,12 +35,12 @@ pub const Square: Component<Props> = |s| {
 
 fn icon(_s: Scope<Props>, piece: Option<Piece>) -> LazyNodes {
     for piece in piece {
-        log::debug!("{piece:?}");
         return html!(
-            <img src="../public/{piece.color}/{piece.kind}.svg"
+            <img 
+                class="piece-icon"
+                src="public/{piece.color}/{piece.kind}.svg"
                 alt="{piece.kind}"/>
         );
     }
     html!()
 }
-

@@ -93,12 +93,12 @@ impl Color {
 impl Display for Kind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Bishop => write!(f, "♝")?,
-            Rook => write!(f, "♜")?,
-            King => write!(f, "♚")?,
-            Queen => write!(f, "♛")?,
-            Pawn => write!(f, "♟")?,
-            Knight => write!(f, "♞")?,
+            Bishop => write!(f, "bishop")?,
+            Rook => write!(f, "rook")?,
+            King => write!(f, "king")?,
+            Queen => write!(f, "queen")?,
+            Pawn => write!(f, "pawn")?,
+            Knight => write!(f, "knight")?,
         }
         Ok(())
     }
