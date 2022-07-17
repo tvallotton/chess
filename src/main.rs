@@ -1,39 +1,22 @@
 #![allow(non_upper_case_globals)]
+#![allow(dead_code, unused)]
 #[macro_use]
 extern crate dioxus_html_macro;
 
-#[cfg(not(target_arch = "wasm32"))]
-use clap::*;
+
+
+// mod board;
+
+
 use dioxus::prelude::*;
+use engine::{Board, Color, Move, Position};
 
-use app::App;
-use menu::Menu;
-use play::Play;
 
-mod app;
-mod board;
-mod button;
-mod menu;
-mod play;
-mod square;
-
-fn main() {
-    #[cfg(target_arch = "wasm32")]
-    {
-        wasm_logger::init(Default::default());
-        dioxus::web::launch(App);
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        pretty_env_logger::init();
-
-        dioxus::desktop::launch_cfg(App, |config| {
-            config.with_custom_head(r#"
-            <link rel="stylesheet" href="public/bootstrap.min.css">
-            <link rel="stylesheet" href="public/styles.css">
-            "#.into())
-
-        })
+struct UseSelected; 
+impl UseSelected {
+    fn set(mut board: Board, prev: Position, pos: Position) {
+        board.apply(Move::from((prev, pos)));
     }
 }
 
+fn main() {}
