@@ -1,30 +1,34 @@
-use super::square::Square;
+use crate::button::Button; 
 use crate::board::Board;
 use dioxus::prelude::*;
-use dioxus::router::Link;
 use dioxus_html_macro::html;
-use engine::Color;
+use engine::{Color, Position};
+use UseState as U; 
 
-#[derive(Props, PartialEq)]
-pub struct Foo {
-    favorite_num: i32,
-}
-
-pub const Play: Component<Foo> = |ref s| {
-    let player = use_color(s)?;
-    let turn = use_state(s, || player);
-    let num = s.props.favorite_num;
+pub fn Play(s: Scope) -> Element {
+    let player = use_color(&s)?;
+    let selected: &U<Option<Position>> = use_state(&s, || None);
+    let board: &U<engine::Board> = use_state(&s, Default::default);     
+    let allow_play = board.turn == player; 
+    
     s.render(html! {
         <h1> "Play as {player}" </h1>
         <br/>
-        <Link to="/">"return to menu"</Link>
         <br/>
-        <Board play_as={player} board={Default::default()} highlighted={&[]}>
-        </Board>
-    })
-};
+        <Board
+            play_as={player}
+            board={board.clone()}
+            selected={selected.clone()}
+            allow_play={allow_play}
+        />
+        <Button to="/">"return to menu"</Button>
 
-fn use_color(s: &Scope<Foo>) -> Option<Color> {
+    })
+}
+
+
+
+fn use_color(s: &Scope) -> Option<Color> {
     use_route(s)
         .segment("player")?
         .parse()

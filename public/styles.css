@@ -5,10 +5,12 @@
 
 .black.square {
     background-color: rgb(165, 165, 165);
+    
 }
 
 .white.square {
     background-color: rgb(233, 233, 233);
+    
 }
 
 .board-row {

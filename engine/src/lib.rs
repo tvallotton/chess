@@ -19,4 +19,5 @@ mod start_board;
 mod train;
 
 pub use board::Board;
+pub use moves::{Position, Move}; 
 pub use piece::{Color, Piece, Kind}; 

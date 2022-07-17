@@ -32,8 +32,8 @@ pub enum Play {
 }
 #[derive(Debug, Clone, Copy)]
 enum Finish {
-    Draw, 
-    Resign
+    Draw,
+    Resign,
 }
 
 pub fn playable(r#move: Play) -> bool {
@@ -70,6 +70,19 @@ impl From<(i8, i8)> for Position {
         Position {
             rank: obj.0,
             file: obj.1,
+        }
+    }
+}
+
+impl<T, U> From<(T, U)> for Move
+where
+    T: Into<Position>,
+    U: Into<Position>,
+{
+    fn from(tuple: (T, U)) -> Self {
+        Move {
+            to: tuple.0.into(),
+            from: tuple.1.into(),
         }
     }
 }

@@ -2,7 +2,7 @@ use crate::button::Button;
 use dioxus::prelude::*;
 use dioxus_html_macro::html;
 
-pub const Menu: Component = |s| {  
+pub const Menu: Component = |s| {
     s.render(html!(
         <h1>"menu"</h1>
         <div>

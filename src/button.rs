@@ -22,7 +22,7 @@ pub fn Button<'a>(s: Scope<'a, Props<'a>>) -> Element<'a> {
 
     let onclick = move |_| {
         let router = use_router(&s);
-        router.push_route("play_as/white", Some("Foo".into()), Some("Bar".into()));
+        router.push_route(to, Some("Foo".into()), Some("Bar".into()));
     };
     
     s.render(html!(

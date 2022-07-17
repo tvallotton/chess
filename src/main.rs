@@ -26,8 +26,13 @@ fn main() {
     #[cfg(not(target_arch = "wasm32"))]
     {
         pretty_env_logger::init();
+
         dioxus::desktop::launch_cfg(App, |config| {
-            config.with_custom_index(include_str!("../index.html").into())
+            config.with_custom_head(r#"
+            <link rel="stylesheet" href="public/bootstrap.min.css">
+            <link rel="stylesheet" href="public/styles.css">
+            "#.into())
+
         })
     }
 }
