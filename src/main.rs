@@ -16,6 +16,7 @@ mod button;
 mod menu;
 mod play;
 mod square;
+mod use_select;
 
 fn main() {
     #[cfg(target_arch = "wasm32")]
