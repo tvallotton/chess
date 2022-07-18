@@ -4,6 +4,7 @@ use dioxus::prelude::*;
 use dioxus_html_macro::html;
 use engine::{Color, Position};
 use UseState as U;
+use crate::parameters::Parameters; 
 
 pub fn Play(s: Scope) -> Element {
     let player = use_color(&s)?;
@@ -13,18 +14,17 @@ pub fn Play(s: Scope) -> Element {
     let allow_play = true; //board.turn == player;
 
     s.render(html! {
-        <h1> "Play as {player}" </h1>
-        <br/>
-        <br/>
-        <Board
-            play_as={player}
-            board={board.clone()}
-            selected={selected.clone()}
-            allow_play={allow_play}
-            
-        />
-        <Button to="/">"return to menu"</Button>
-
+            <h1> "Play as {player}" </h1>
+            <br/>
+            <br/>
+            <Board
+                play_as={player}
+                board={board.clone()}
+                selected={selected.clone()}
+                allow_play={allow_play}
+            />
+            <Button to="/">"return to menu"</Button>
+            <Parameters/>
     })
 }
 

@@ -5,12 +5,12 @@
 
 .black.square {
     background-color: rgb(165, 165, 165);
-    
+
 }
 
 .white.square {
     background-color: rgb(233, 233, 233);
-    
+
 }
 
 .board-row {
@@ -25,9 +25,9 @@
 }
 
 .piece.white {
-    color: white; 
-    font-size:xx-large;
-    
+    color: white;
+    font-size: xx-large;
+
 }
 
 .highlighted.white.square {
@@ -44,7 +44,7 @@
 
 .selected.white.square {
     background-color: rgb(255, 255, 255);
-    
+
 }
 
 
@@ -57,4 +57,26 @@
     width: 15px;
     margin-top: 17px;
     margin-left: 17px;
+}
+
+.menu-button:hover {
+    background-color: white;
+    color: white;
+    border-color: skyblue;
+}
+
+#main {
+    height: 100%;
+}
+
+.menu-container {
+    height: 100%
+}
+
+body {
+    height: 100%;
+}
+
+html {
+    height: 100%;
 }

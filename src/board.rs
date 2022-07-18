@@ -103,12 +103,6 @@ impl UseSelected {
     }
     pub fn is_valid(&self, pos: Position) -> bool {
         if let Some(piece) = self.board[pos] {
-            log::error!(
-                "{} && {} == {}",
-                self.allow_play,
-                piece.color,
-                self.board.turn
-            );
             return self.allow_play && piece.color == self.board.turn;
         }
         false
