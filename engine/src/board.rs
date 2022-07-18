@@ -473,30 +473,20 @@ impl Board {
         let ref mut s = Stats::default();
         let depth = params.max_depth as i32;
         let mut moves = if let White = self.turn {
-            // if depth > params.sort_depth {
-            //     children.sort_by_cached_key(|(b, _)| {
-            //         FloatOrd(-b.minimax(params, depth - 1 - params.presort_depth, alpha, beta, s))
-            //     });
-            // }
             children
                 .into_iter()
                 .map(|(child, mov)| {
                     let score = child.minimax(params, depth, alpha, beta, s);
-                    // alpha = alpha.max(score);
+                    alpha = alpha.max(score);
                     (-score, mov)
                 })
                 .collect_vec()
         } else {
-            // if depth > params.sort_depth {
-            //     children.sort_by_cached_key(|(b, _)| {
-            //         FloatOrd(b.minimax(params, depth - 1 - params.presort_depth, alpha, beta, s))
-            //     });
-            // }
             children
                 .into_iter()
                 .map(|(child, mov)| {
                     let score = child.minimax(params, depth, alpha, beta, s);
-                    // beta = beta.min(score);
+                    beta = beta.min(score);
                     (score, mov)
                 })
                 .collect()
