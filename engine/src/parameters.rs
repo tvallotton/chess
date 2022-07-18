@@ -12,7 +12,7 @@ use std::{ops::Index, str::FromStr};
 
 use Kind::*;
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Params {
     pub sort_depth: i32,
     pub presort_depth: i32,
@@ -36,7 +36,7 @@ pub struct Params {
     pub white_algorithm: Algorithm,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum Algorithm {
     AlphaBetaPruning,
@@ -131,7 +131,7 @@ impl FromStr for Params {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ValueTable([[f32; 8]; 8]);
 
 impl ValueTable {

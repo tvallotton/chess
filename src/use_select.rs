@@ -8,7 +8,8 @@ pub struct UseSelected {
     pub allow_play: bool,
     pub board: UseState<Board>,
 }
-fn use_selected<'a>(s: &'a Scope<Props>) -> UseSelected {
+
+pub fn use_selected<'a>(s: &'a Scope<Props>) -> UseSelected {
     UseSelected {
         pos: use_state(s, || None).clone(),
         allow_play: s.props.allow_play,
@@ -17,31 +18,31 @@ fn use_selected<'a>(s: &'a Scope<Props>) -> UseSelected {
 }
 
 impl UseSelected {
-    pub fn set(&self, pos: Option<Position>) {
+    pub fn set(&self, pos: Position) {
         match *self.pos {
             Some(prev) => {
                 let mut board: Board = (*self.board).clone();
-                for pos in pos {
-                    Board::apply(&mut board, (pos, prev).into())
-                        .map_err(|_| {
-                            self.pos.set(Some(pos));
-                        })
-                        .ok();
+                if let Ok(_) = (&mut board).apply((pos, prev).into()) {
+                    self.board.set(board);
+                    self.pos.set(None);
+                } else {
+                    self.pos.set(None);
+                    self.set_new(pos);
                 }
-                self.board.set(board);
             }
-            None if self.allow_play => {
-                self.set_new(pos);
-            }
-            None => {}
+            None => self.set_new(pos),
         }
     }
+    pub fn is_valid(&self, pos: Position) -> bool {
+        if let Some(piece) = self.board[pos] {
+            return self.allow_play && piece.color == self.board.turn;
+        }
+        false
+    }
 
-    pub fn set_new(&self, pos: Option<Position>) {
-        if let Some(pos) = pos {
-            if self.board[pos].is_some() {
-                self.pos.set(Some(pos));
-            }
+    pub fn set_new(&self, pos: Position) {
+        if self.is_valid(pos) {
+            self.pos.set(Some(pos));
         }
     }
 }

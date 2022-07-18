@@ -31,19 +31,19 @@
 }
 
 .highlighted.white.square {
-    background-color: #e2c9c9;
+    background-color: #c9e2df;
 }
 
 .highlighted.black.square {
-    background-color: #c3b0b0
+    background-color: #b0c3c1; 
 }
 
 .selected.black.square {
-    background-color: rgb(255, 255, 255);
+    background-color: #b0b0c3;
 }
 
 .selected.white.square {
-    background-color: rgb(255, 255, 255);
+    background-color: #c9c9e2;
 
 }
 
@@ -59,24 +59,24 @@
     margin-left: 17px;
 }
 
-.menu-button:hover {
+/* .menu-button:hover {
     background-color: white;
     color: white;
     border-color: skyblue;
-}
+} */
 
 #main {
-    height: 100%;
+    height: 105%;
 }
 
 .menu-container {
-    height: 100%
+    height: 105%
 }
 
 body {
-    height: 100%;
+    height: 105%;
 }
 
 html {
-    height: 100%;
+    height: 105%;
 }

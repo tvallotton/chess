@@ -1,6 +1,7 @@
 use crate::square::Square;
 use dioxus::prelude::*;
-use engine::{Board, Color, Move, Position};
+use engine::{Board, Color, Move, Position, Params};
+use crate::use_select::{use_selected, UseSelected}; 
 use std::rc::Rc;
 
 #[derive(Props, PartialEq)]
@@ -8,7 +9,7 @@ pub struct Props {
     pub board: UseState<Board>,
     pub selected: UseState<Option<Position>>,
     pub play_as: Color,
-
+    pub params: Params, 
     pub allow_play: bool,
 }
 
@@ -69,50 +70,6 @@ fn highlighted(board: &Board, selected: &UseSelected) -> Vec<Position> {
         }
     }
     vec![]
-}
-
-fn use_selected<'a>(s: &'a Scope<Props>) -> UseSelected {
-    UseSelected {
-        pos: use_state(s, || None).clone(),
-        allow_play: s.props.allow_play,
-        board: s.props.board.clone(),
-    }
-}
-#[derive(Clone, PartialEq)]
-pub struct UseSelected {
-    pub pos: UseState<Option<Position>>,
-    pub allow_play: bool,
-    pub board: UseState<Board>,
-}
-
-impl UseSelected {
-    pub fn set(&self, pos: Position) {
-        match *self.pos {
-            Some(prev) => {
-                let mut board: Board = (*self.board).clone();
-                if let Ok(_) = (&mut board).apply((pos, prev).into()) {
-                    self.board.set(board);
-                    self.pos.set(None);
-                } else {
-                    self.pos.set(None);
-                    self.set_new(pos);
-                }
-            }
-            None => self.set_new(pos),
-        }
-    }
-    pub fn is_valid(&self, pos: Position) -> bool {
-        if let Some(piece) = self.board[pos] {
-            return self.allow_play && piece.color == self.board.turn;
-        }
-        false
-    }
-
-    pub fn set_new(&self, pos: Position) {
-        if self.is_valid(pos) {
-            self.pos.set(Some(pos));
-        }
-    }
 }
 
 fn range(play_as: Color) -> Vec<i8> {

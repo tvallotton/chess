@@ -1,4 +1,5 @@
 #![allow(non_upper_case_globals)]
+#![allow(non_snake_case)]
 #[macro_use]
 extern crate dioxus_html_macro;
 
@@ -10,6 +11,7 @@ mod menu;
 mod parameters;
 mod play;
 mod square;
+mod page; 
 mod use_select;
 
 fn main() {

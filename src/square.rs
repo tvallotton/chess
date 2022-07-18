@@ -1,4 +1,4 @@
-use crate::board::UseSelected;
+use crate::use_select::UseSelected;
 use dioxus::prelude::*;
 use dioxus_html_macro::html;
 use engine::{Color, Piece, Position};
