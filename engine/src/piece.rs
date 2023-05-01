@@ -1,113 +1,52 @@
-use std::{fmt::Display, ops::BitOr, str::FromStr};
+use std::{fmt::Debug, mem::transmute, num::NonZeroU8, ops::BitOr};
 
-use serde::Deserialize;
-pub use Color::*;
-pub use Kind::*;
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Eq, Ord)]
-pub struct Piece {
-    pub kind: Kind,
-    pub color: Color,
-}
+#[derive(Clone, Copy)]
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Kind {
-    Pawn,
-    Knight,
-    Bishop,
-    Rook,
-    Queen,
-    King,
-}
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
-#[serde(rename_all = "lowercase")]
+/// Zero is reserved as a niche.
+pub struct Piece(pub NonZeroU8);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Color {
-    Black,
-    White,
+    White = 0b10,
+    Black = 0b11,
 }
 
-impl Default for Color {
-    fn default() -> Self {
-        White
+#[rustfmt::skip]
+#[derive(Clone, Copy, Debug)]
+pub enum Kind {
+    Pawn =   0b00100,
+    King =   0b01000,
+    Rook =   0b01100,
+    Queen =  0b10000,
+    Bishop = 0b10100,
+    Knight = 0b11000,
+}
+
+impl Piece {
+    #[inline]
+    pub fn kind(self) -> Kind {
+        let kind = self.0.get() & 0b11100;
+        unsafe { transmute(kind) }
+    }
+    #[inline]
+    pub fn color(self) -> Color {
+        let color = self.0.get() & 0b11;
+        unsafe { transmute(color) }
+    }
+}
+
+impl Debug for Piece {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?} | {:?}", self.color(), self.kind())
     }
 }
 
 impl BitOr<Kind> for Color {
     type Output = Piece;
-    fn bitor(self, kind: Kind) -> Self::Output {
-        Piece { kind, color: self }
-    }
-}
-
-impl FromStr for Color {
-    type Err = &'static str;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.eq_ignore_ascii_case("white") {
-            Ok(White)
-        } else if s.eq_ignore_ascii_case("black") {
-            Ok(Black)
-        } else {
-            Err("not a valid player")
-        }
-    }
-}
-
-impl Color {
-    #[inline]
-    pub fn opposite(self) -> Color {
-        match self {
-            Black => White,
-            White => Black,
-        }
-    }
-    pub fn promotion_rank(self) -> i8 {
-        match self {
-            Black => 7,
-            White => 0,
-        }
-    }
-    pub fn pawn_blocking_rank(self) -> i8 {
-        match self {
-            Black => 2,
-            White => 5,
-        }
-    }
-    pub fn pawn_start(self) -> i8 {
-        match self {
-            Black => 1,
-            White => 6,
-        }
-    }
-    pub fn pawn_dir(self) -> i8 {
-        match self {
-            Black => 1,
-            White => -1,
-        }
-    }
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Black => "balck", 
-            White => "white",
-        }
-    }
-}
-impl Display for Kind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Bishop => write!(f, "bishop")?,
-            Rook => write!(f, "rook")?,
-            King => write!(f, "king")?,
-            Queen => write!(f, "queen")?,
-            Pawn => write!(f, "pawn")?,
-            Knight => write!(f, "knight")?,
-        }
-        Ok(())
-    }
-}
-impl Display for Color {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            White => write!(f, "white"),
-            Black => write!(f, "black"),
-        }
+    fn bitor(self, rhs: Kind) -> Self::Output {
+        let kind = rhs as u8;
+        let color = self as u8;
+        let flags = unsafe { NonZeroU8::new_unchecked(kind | color) };
+        Piece(flags)
     }
 }

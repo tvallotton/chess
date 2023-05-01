@@ -1,88 +1,77 @@
-use crate::piece::Piece;
+use crate::{board::Board, location::Location, piece::Color};
 
-enum ComplexMove {
-    // this may be a simple capture.
-    SimpleMove(Translation),
-    // The translation object represents
-    // the attacker's move
-    Passant(Translation),
-}
-type Translation = Move;
-
-/// A move represents the change of position of a piece.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Move {
-    pub to: Position,
-    pub from: Position,
+    from: Location,
+    to: Location,
 }
 
-/// A play is wrapper around a move that carries more information.
-/// Not all plays can actually be played, i.e., `Defense` does
-/// not represent a move that can be played in this turn, but
-/// maybe in future turns. This information about non playable moves
-/// is kept because it can be useful for heuristics and it would be
-/// expensive to recompute if it is needed.
-#[derive(Debug)]
-pub enum Play {
-    Defense(Move, Piece),
-    Capture(Move, Piece),
-    Move(Move),
-    RightCastle,
-    LeftClastle,
-}
-#[derive(Debug, Clone, Copy)]
-enum Finish {
-    Draw,
-    Resign,
+struct Positions {
+    white: u64,
+    black: u64,
 }
 
-pub fn playable(r#move: Play) -> bool {
-    !matches!(r#move, Play::Defense(_, _))
+pub fn moves(board: Board) -> impl Iterator<Item = Move> {
+    None.into_iter()
 }
 
-#[derive(Clone, Debug, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Position {
-    pub rank: i8,
-    pub file: i8,
+fn positions(board: Board) -> Positions {
+    let mut pos = Positions { white: 0, black: 0 };
+
+    for piece in board.pieces {
+        let Some((piece, loc)) = piece else {
+            continue;
+        };
+        let table = match piece.color() {
+            Color::White => &mut pos.white,
+            Color::Black => &mut pos.black,
+        };
+
+        *table |= 1 << (loc.rank() * 8 + loc.file());
+    }
+    pos
 }
 
-impl Position {
-    pub fn validate(self) -> Option<Self> {
-        let Self { rank, file } = self;
-        if (0..8).contains(&rank) && 0 <= file && file < 8 {
-            Some(self)
-        } else {
-            None
+#[inline]
+pub const fn file(n: u64) -> u64 {
+    0xff << (8 * n)
+}
+
+#[inline]
+pub const fn rank(n: u64) -> u64 {
+    0x8080808080808080 << n
+}
+
+const fn transpose(mut x: u64) -> u64 {
+    x = x >> 32 | x << 32;
+
+    let mask: u64 = 0x0000ffff0000ffff;
+    x = (x >> 16) & mask | (x & mask) << 16;
+
+    let mask: u64 = 0x00ff00ff00ff00ff;
+    x = (x >> 8) & mask | (x & mask) << 8;
+
+    let mask: u64 = 0x0f0f0f0f0f0f0f0f;
+    x = (x >> 4) & mask | (x & mask) << 4;
+
+    let mask: u64 = 0x3333333333333333;
+    x = (x >> 2) & mask | (x & mask) << 2;
+
+    let mask: u64 = 0x5555555555555555;
+    x = (x >> 1) & mask | (x & mask) << 1;
+
+    x
+}
+
+fn print(x: u64) {
+    for i in 0..8 {
+        for j in 0..8 {
+            print!("{}", (x >> (i * 8)) >> j & 1);
         }
-    }
-    pub fn relative(self, pos: &'_ [(i8, i8)]) -> impl Iterator<Item = Self> + '_ {
-        pos.iter()
-            .copied()
-            .map(|x| (x.0, x.1))
-            .map(Position::from)
-            .filter(|pos| 0 <= pos.rank && pos.rank < 8)
-            .filter(|pos| 0 <= pos.file && pos.file < 8)
+        println!();
     }
 }
 
-impl From<(i8, i8)> for Position {
-    fn from(obj: (i8, i8)) -> Self {
-        Position {
-            rank: obj.0,
-            file: obj.1,
-        }
-    }
-}
-
-impl<T, U> From<(T, U)> for Move
-where
-    T: Into<Position>,
-    U: Into<Position>,
-{
-    fn from(tuple: (T, U)) -> Self {
-        Move {
-            to: tuple.0.into(),
-            from: tuple.1.into(),
-        }
-    }
+#[test]
+fn default_positions() {
+    print(positions(Default::default()));
 }
