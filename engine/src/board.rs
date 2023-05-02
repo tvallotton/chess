@@ -7,7 +7,7 @@ use crate::{
 #[derive(Clone, Copy)]
 pub struct Board {
     pub pieces: [Option<(Piece, Location)>; 32],
-    pub metadata: Metadata,
+    pub meta: Metadata,
 }
 
 impl Default for Board {
@@ -49,7 +49,7 @@ impl Default for Board {
                 White | Pawn   | (6, 7),
             ]
             .map(Some),
-            metadata: Metadata::default(),
+            meta: Metadata::default(),
         }
     }
 }

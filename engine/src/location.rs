@@ -1,16 +1,30 @@
 use std::ops::BitOr;
 
+use serde::de::IntoDeserializer;
+
 use crate::piece::Piece;
 
 #[derive(Clone, Copy)]
 pub struct Location(u8);
 
 impl Location {
-    pub fn rank(&self) -> u8 {
+    pub fn rank(self) -> u8 {
         (self.0 >> 3) & 0b111
     }
-    pub fn file(&self) -> u8 {
+    pub fn file(self) -> u8 {
         self.0 & 0b111
+    }
+
+    pub fn pos(self) -> u64 {
+        1 << (self.rank() * 8 + self.file())
+    }
+
+    pub fn invert(self) -> Self {
+        (7 - self.rank(), 7 - self.file()).into()
+    }
+
+    pub fn transpose(self) -> Location {
+        (self.file(), self.rank()).into()
     }
 }
 
