@@ -2,6 +2,7 @@ use crate::{board::Board, location::Location, piece::Color};
 
 use self::utils::{invert, invert_u64, transpose};
 
+mod bishop;
 mod rook;
 mod utils;
 

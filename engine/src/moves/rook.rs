@@ -7,9 +7,7 @@ use super::{
     Move, Positions,
 };
 
-pub(super) fn rook_moves(pos: &Positions, loc: Location) {}
-
-pub(super) fn rook_positions(pos: &Positions, loc: Location) -> u64 {
+pub(super) fn rook_moves(pos: &Positions, loc: Location) -> u64 {
     let rank = rank_positions(pos, loc);
     let file = rank_positions(&pos.transpose(), loc.transpose());
 
@@ -88,5 +86,5 @@ fn rook_test() {
         opponent_transposed: mine,
     };
 
-    assert_eq!(rook_positions(&pos, (1, 4).into()), 1157442765409234448);
+    assert_eq!(rook_moves(&pos, (1, 4).into()), 1157442765409234448);
 }
