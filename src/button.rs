@@ -24,7 +24,7 @@ pub fn Button<'a>(s: Scope<'a, Props<'a>>) -> Element<'a> {
         let router = use_router(&s);
         router.push_route(to, Some("Foo".into()), Some("Bar".into()));
     };
-    
+
     s.render(html!(
         <button class="btn {class}" onclick={onclick}>{children}</button>
     ))

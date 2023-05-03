@@ -325,7 +325,7 @@ pub const fn invert(mut x: u8) -> u8 {
 
 pub fn debug(x: u64) {
     for i in 0..8 {
-        for j in (0..8).rev() {
+        for j in (0..8) {
             print!("{}", (x >> (i * 8)) >> j & 1);
         }
         println!();

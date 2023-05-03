@@ -18,9 +18,9 @@ pub fn Play(s: Scope) -> Element {
     let allow_play = true; //board.turn == player;
 
     let onclick = move |_| {
-        let mut b = board.deref().clone(); 
-        b.play_with(&**params); 
-        board.set(b); 
+        let mut b = board.deref().clone();
+        b.play_with(&**params);
+        board.set(b);
     };
 
     s.render(html! {

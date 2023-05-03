@@ -8,10 +8,10 @@ mod app;
 mod board;
 mod button;
 mod menu;
+mod page;
 mod parameters;
 mod play;
 mod square;
-mod page; 
 mod use_select;
 
 fn main() {

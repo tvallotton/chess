@@ -1,7 +1,7 @@
 use crate::square::Square;
+use crate::use_select::{use_selected, UseSelected};
 use dioxus::prelude::*;
-use engine::{Board, Color, Move, Position, Params};
-use crate::use_select::{use_selected, UseSelected}; 
+use engine::{Board, Color, Move, Params, Position};
 use std::rc::Rc;
 
 #[derive(Props, PartialEq)]
@@ -9,7 +9,7 @@ pub struct Props {
     pub board: UseState<Board>,
     pub selected: UseState<Option<Position>>,
     pub play_as: Color,
-    pub params: Params, 
+    pub params: Params,
     pub allow_play: bool,
 }
 

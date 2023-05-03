@@ -85,6 +85,7 @@ fn rook_test() {
         mine_transposed: mine,
         opponent_transposed: mine,
     };
-
+    debug(rook_moves(&pos, (1, 4).into()));
+    debug(Location::from((1, 4)).pos());
     assert_eq!(rook_moves(&pos, (1, 4).into()), 1157442765409234448);
 }
