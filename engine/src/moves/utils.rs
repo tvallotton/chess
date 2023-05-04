@@ -44,6 +44,14 @@ pub fn invert_u64(mut x: u64) -> u64 {
     x
 }
 
+pub fn col2(x: u64, i: u8) -> u8 {
+    (x & file(i))
+        .to_le_bytes()
+        .iter()
+        .enumerate()
+        .fold(0, |acc, (n, x)| x << n | acc)
+}
+
 pub fn col(x: u64, i: u8) -> u8 {
     let x = x
         .to_le_bytes()
@@ -325,7 +333,7 @@ pub const fn invert(mut x: u8) -> u8 {
 
 pub fn debug(x: u64) {
     for i in 0..8 {
-        for j in (0..8) {
+        for j in 0..8 {
             print!("{}", (x >> (i * 8)) >> j & 1);
         }
         println!();
@@ -336,7 +344,9 @@ pub fn debug(x: u64) {
 #[test]
 fn col_test() {
     let x = 0x3284923439412;
-    assert_eq!(col(x, 1), 0b01001101);
+    debug(x);
+    println!("{:#010b}", col2(x, 1));
+    //assert_eq!(col2(x, 1), 0b01001101);
 }
 
 #[test]

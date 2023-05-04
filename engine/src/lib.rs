@@ -3,3 +3,4 @@ mod location;
 mod metadata;
 mod moves;
 mod piece;
+pub use moves::rook::rook_moves;

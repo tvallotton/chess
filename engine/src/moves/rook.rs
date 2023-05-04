@@ -7,7 +7,7 @@ use super::{
     Move, Positions,
 };
 
-pub(super) fn rook_moves(pos: &Positions, loc: Location) -> u64 {
+pub fn rook_moves(pos: &Positions, loc: Location) -> u64 {
     let rank = rank_positions(pos, loc);
     let file = rank_positions(&pos.transpose(), loc.transpose());
 

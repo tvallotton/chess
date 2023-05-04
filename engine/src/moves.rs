@@ -3,7 +3,7 @@ use crate::{board::Board, location::Location, piece::Color};
 use self::utils::{invert, invert_u64, transpose};
 
 mod bishop;
-mod rook;
+pub mod rook;
 mod utils;
 
 pub struct Move {
@@ -11,7 +11,7 @@ pub struct Move {
     to: Location,
 }
 
-struct Positions {
+pub struct Positions {
     opponent: u64,
     mine: u64,
 
