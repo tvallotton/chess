@@ -1,8 +1,12 @@
+use std::iter::from_fn;
+
 use crate::{board::Board, location::Location};
 
 use self::utils::invert;
 
 pub mod bishop;
+pub mod king;
+pub mod pawn;
 pub mod queen;
 pub mod rook;
 mod utils;
@@ -15,7 +19,6 @@ pub struct Move {
 pub struct Positions {
     opponent: u64,
     mine: u64,
-
     mine_inverted: u64,
     opponent_inverted: u64,
 }
@@ -24,29 +27,12 @@ pub fn moves(_board: Board) -> impl Iterator<Item = Move> {
     None.into_iter()
 }
 
+pub fn bitfields(board: Board) {
+    todo!()
+}
+
 fn positions(board: Board) -> Positions {
-    let mut pos = Positions {
-        mine: 0,
-        opponent: 0,
-        mine_inverted: 0,
-        opponent_inverted: 0,
-    };
-
-    for piece in board.pieces {
-        let Some((piece, loc)) = piece else {
-            continue;
-        };
-        let table = if piece.color() == board.meta.turn() {
-            &mut pos.mine
-        } else {
-            &mut pos.opponent
-        };
-
-        *table |= 1 << (loc.rank() * 8 + loc.file());
-    }
-    pos.mine_inverted = invert(pos.mine);
-    pos.opponent_inverted = invert(pos.opponent);
-    pos
+    todo!()
 }
 impl Positions {
     fn new(mine: u64, opponent: u64) -> Positions {

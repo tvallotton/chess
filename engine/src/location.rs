@@ -1,18 +1,16 @@
-use std::ops::BitOr;
-
-
+use std::{num::NonZeroU8, ops::BitOr};
 
 use crate::piece::Piece;
 
 #[derive(Clone, Copy)]
-pub struct Location(u8);
+pub struct Location(NonZeroU8);
 
 impl Location {
     pub fn rank(self) -> u8 {
-        (self.0 >> 3) & 0b111
+        (self.0.get() >> 4) & 0b111
     }
     pub fn file(self) -> u8 {
-        self.0 & 0b111
+        (self.0.get() >> 1) & 0b111
     }
 
     pub fn pos(self) -> u64 {
@@ -41,6 +39,7 @@ impl<T: Into<Location>> BitOr<T> for Piece {
 
 impl From<(u8, u8)> for Location {
     fn from((rank, file): (u8, u8)) -> Self {
-        Location((rank << 3 | file) as u8)
+        let non_zero = ((rank << 3) | file) << 1;
+        unsafe { Location(NonZeroU8::new_unchecked(non_zero)) }
     }
 }
