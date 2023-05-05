@@ -9,15 +9,20 @@ use super::{
 
 pub fn rook_moves(pos: &Positions, loc: Location) -> u64 {
     let rank = rank_positions(pos, loc);
-    let file = rank_positions(&pos.transpose(), loc.transpose());
-
-    (rank | transpose(file)) & !loc.pos()
+    let file = file_positions(pos, loc);
+    (rank | file) & !loc.pos()
 }
-
+#[inline]
 pub(super) fn rank_positions(pos: &Positions, loc: Location) -> u64 {
     let leftside = rank_leftside(pos, loc);
     let rightside = invert_u64(rank_leftside(&pos.invert(), loc.invert()));
-    leftside | rightside
+    (leftside | rightside) & !loc.pos()
+}
+#[inline]
+pub(super) fn file_positions(pos: &Positions, loc: Location) -> u64 {
+    let downwards = file_downwards(pos, loc);
+    let upwards = invert_u64(file_downwards(&pos.invert(), loc.invert()));
+    downwards | upwards
 }
 
 /// Computes valid bits to the left to the rook. Right hand side bits are
@@ -57,6 +62,34 @@ pub(super) fn rank_leftside(pos: &Positions, loc: Location) -> u64 {
     self_block & attack
 }
 
+pub(super) fn file_downwards(pos: &Positions, loc: Location) -> u64 {
+    let bfile = file(loc.file());
+
+    // 1. We discard the top bits so they don't interfere.
+    let ignore = u64::MAX
+        .overflowing_add(loc.pos())
+        .0;
+    let bfile = bfile & !ignore;
+
+    // 2. We `or` mine with !bfile to let carries flow.
+    let mine = !bfile | pos.mine;
+
+    // 3. We do the same for the opponent but shifted by one rank
+    // because this will allow us to include it in the set of available moves
+    let opponent = !bfile | pos.opponent << 8;
+
+    // 4. We merge the two blocking bitfields
+    let blocking = mine | opponent;
+
+    // 5. We add the file will mine to carry out the  bits
+    // after the blocking piece.
+    (blocking
+        .overflowing_add(bfile)
+        .0)
+        & bfile
+        & !blocking
+}
+
 #[test]
 fn rank_test() {
     let mine = (1 << 15) | (1 << 14);
@@ -74,9 +107,9 @@ fn rank_test() {
 }
 
 #[test]
-fn rook_test() {
-    let mine = (1 << 15) | (1 << 14);
-    let opponent = (1 << 8) | (1 << 9);
+fn file_test() {
+    let mine = 1 << 3;
+    let opponent = 1 << 51;
     let pos = Positions {
         opponent,
         mine_inverted: invert_u64(mine),
@@ -85,7 +118,28 @@ fn rook_test() {
         mine_transposed: mine,
         opponent_transposed: mine,
     };
+    let p = (2, 3).into();
+    debug(opponent | mine);
+    debug(file_positions(&pos, p));
+    debug(p.pos());
+    assert_eq!(file_positions(&pos, p), 2260630401189888);
+}
+
+#[test]
+fn rook_test() {
+    let mine = (1 << 15) | (1 << 14);
+    let opponent = (1 << 8) | (1 << 9) | (1 << 52);
+    let pos = Positions {
+        opponent,
+        mine_inverted: invert_u64(mine),
+        mine,
+        opponent_inverted: invert_u64(opponent),
+        mine_transposed: mine,
+        opponent_transposed: mine,
+    };
+    debug(opponent);
     debug(rook_moves(&pos, (1, 4).into()));
     debug(Location::from((1, 4)).pos());
-    assert_eq!(rook_moves(&pos, (1, 4).into()), 1157442765409234448);
+    dbg!(rook_moves(&pos, (1, 4).into()));
+    assert_eq!(rook_moves(&pos, (1, 4).into()), 4521260802387472);
 }

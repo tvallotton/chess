@@ -7,6 +7,13 @@ pub(super) fn bishop_moves(pos: Positions, loc: Location) -> u64 {
     todo!()
 }
 
+pub(super) fn two_diagonals(pos: &Positions, loc: Location) -> u64 {
+    let first = compute_single(&pos, loc);
+    let second = compute_single(&pos.invert(), loc.invert());
+
+    first | second
+}
+
 /// Computes a single stoke in the X formed by the bishop
 pub(super) fn compute_single(pos: &Positions, loc: Location) -> u64 {
     let rank = loc.rank();
@@ -47,14 +54,7 @@ fn diagonal(loc: Location) -> u64 {
 fn test_diag() {
     let mine = (1 << 8) | (1 << 9);
     let opponent = (1 << 55) | (1 << 54);
-    let pos = Positions {
-        opponent,
-        mine_inverted: 0,
-        mine,
-        opponent_inverted: 0,
-        mine_transposed: mine,
-        opponent_transposed: mine,
-    };
+    let pos = Positions::new(mine, opponent);
     debug(mine);
     debug(opponent);
     debug(compute_single(&pos, (2, 2).into()));

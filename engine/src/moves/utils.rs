@@ -2,7 +2,7 @@ use std::hint::unreachable_unchecked;
 
 #[inline]
 pub const fn file(n: u8) -> u64 {
-    0x8080808080808080 >> n
+    0x101010101010101 << n
 }
 
 #[inline]

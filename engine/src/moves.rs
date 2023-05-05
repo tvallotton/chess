@@ -52,16 +52,34 @@ fn positions(board: Board) -> Positions {
     pos.opponent_inverted = invert_u64(pos.opponent);
     pos.mine_transposed = transpose(pos.mine);
     pos.opponent_transposed = transpose(pos.opponent);
+
     pos
 }
 impl Positions {
+    fn new(mine: u64, opponent: u64) -> Positions {
+        let mut pos = Positions {
+            mine: 0,
+            opponent: 0,
+            mine_inverted: 0,
+            opponent_inverted: 0,
+            mine_transposed: 0,
+            opponent_transposed: 0,
+        };
+        pos.mine_inverted = invert_u64(pos.mine);
+        pos.opponent_inverted = invert_u64(pos.opponent);
+        pos.mine_transposed = transpose(pos.mine);
+        pos.opponent_transposed = transpose(pos.opponent);
+
+        pos
+    }
+
     fn invert(&self) -> Positions {
         Positions {
             opponent: self.opponent_inverted,
             mine: self.mine_inverted,
             opponent_inverted: self.opponent,
             mine_inverted: self.mine,
-            mine_transposed: 0,
+            mine_transposed: self.opponent,
             opponent_transposed: 0,
         }
     }
