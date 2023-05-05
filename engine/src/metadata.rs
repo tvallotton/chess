@@ -1,4 +1,4 @@
-use std::{clone, fmt::Debug, mem::transmute, num::NonZeroU32};
+use std::{fmt::Debug, mem::transmute};
 
 use crate::piece::Color;
 use masks::*;
@@ -39,7 +39,7 @@ impl Metadata {
     }
     pub fn set_passant(&mut self, passant: Option<u8>) {
         if let Some(passant) = passant {
-            let file = (passant << 5) & PASSANT_PAWN_FILE;
+            let _file = (passant << 5) & PASSANT_PAWN_FILE;
             self.1 = true;
         } else {
             self.1 = false

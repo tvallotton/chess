@@ -1,8 +1,9 @@
-use crate::{board::Board, location::Location, piece::Color};
+use crate::{board::Board, location::Location};
 
 use self::utils::invert;
 
 pub mod bishop;
+pub mod queen;
 pub mod rook;
 mod utils;
 
@@ -19,7 +20,7 @@ pub struct Positions {
     opponent_inverted: u64,
 }
 
-pub fn moves(board: Board) -> impl Iterator<Item = Move> {
+pub fn moves(_board: Board) -> impl Iterator<Item = Move> {
     None.into_iter()
 }
 

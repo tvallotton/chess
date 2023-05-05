@@ -5,11 +5,11 @@ use super::{utils::invert, Positions};
 use crate::location::Location;
 
 pub fn bishop_moves(pos: &Positions, loc: Location) -> u64 {
-    let first = rightside_moves(&pos, loc);
-    let second = leftside_moves(&pos, loc);
-    let third = invert(rightside_moves(&pos.invert(), loc.invert()));
-    let fourth = invert(leftside_moves(&pos.invert(), loc.invert()));
-    first | second | third | fourth
+    let down_right = rightside_moves(pos, loc);
+    let down_left = leftside_moves(pos, loc);
+    let up_right = invert(rightside_moves(&pos.invert(), loc.invert()));
+    let up_left = invert(leftside_moves(&pos.invert(), loc.invert()));
+    down_right | down_left | up_right | up_left
 }
 
 /// Computes a single stoke in the X formed by the bishop
