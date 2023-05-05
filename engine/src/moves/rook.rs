@@ -12,6 +12,7 @@ pub fn rook_moves(pos: &Positions, loc: Location) -> u64 {
     let file = file_positions(pos, loc);
     (rank | file) & !loc.pos()
 }
+
 #[inline]
 pub(super) fn rank_positions(pos: &Positions, loc: Location) -> u64 {
     let leftside = rank_leftside(pos, loc);
@@ -99,8 +100,6 @@ fn rank_test() {
         mine_inverted: invert_u64(mine),
         mine,
         opponent_inverted: invert_u64(opponent),
-        mine_transposed: mine,
-        opponent_transposed: mine,
     };
 
     assert_eq!(rank_positions(&pos, (1, 4).into()), 0b00101110 << 8);
@@ -115,8 +114,6 @@ fn file_test() {
         mine_inverted: invert_u64(mine),
         mine,
         opponent_inverted: invert_u64(opponent),
-        mine_transposed: mine,
-        opponent_transposed: mine,
     };
     let p = (2, 3).into();
     debug(opponent | mine);
@@ -134,8 +131,6 @@ fn rook_test() {
         mine_inverted: invert_u64(mine),
         mine,
         opponent_inverted: invert_u64(opponent),
-        mine_transposed: mine,
-        opponent_transposed: mine,
     };
     debug(opponent);
     debug(rook_moves(&pos, (1, 4).into()));

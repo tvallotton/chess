@@ -2,7 +2,7 @@ use crate::{board::Board, location::Location, piece::Color};
 
 use self::utils::{invert, invert_u64, transpose};
 
-mod bishop;
+pub mod bishop;
 pub mod rook;
 mod utils;
 
@@ -17,9 +17,6 @@ pub struct Positions {
 
     mine_inverted: u64,
     opponent_inverted: u64,
-
-    mine_transposed: u64,
-    opponent_transposed: u64,
 }
 
 pub fn moves(board: Board) -> impl Iterator<Item = Move> {
@@ -32,8 +29,6 @@ fn positions(board: Board) -> Positions {
         opponent: 0,
         mine_inverted: 0,
         opponent_inverted: 0,
-        mine_transposed: 0,
-        opponent_transposed: 0,
     };
 
     for piece in board.pieces {
@@ -50,9 +45,6 @@ fn positions(board: Board) -> Positions {
     }
     pos.mine_inverted = invert_u64(pos.mine);
     pos.opponent_inverted = invert_u64(pos.opponent);
-    pos.mine_transposed = transpose(pos.mine);
-    pos.opponent_transposed = transpose(pos.opponent);
-
     pos
 }
 impl Positions {
@@ -62,36 +54,19 @@ impl Positions {
             opponent: 0,
             mine_inverted: 0,
             opponent_inverted: 0,
-            mine_transposed: 0,
-            opponent_transposed: 0,
         };
         pos.mine_inverted = invert_u64(pos.mine);
         pos.opponent_inverted = invert_u64(pos.opponent);
-        pos.mine_transposed = transpose(pos.mine);
-        pos.opponent_transposed = transpose(pos.opponent);
 
         pos
     }
-
+    #[inline]
     fn invert(&self) -> Positions {
         Positions {
             opponent: self.opponent_inverted,
             mine: self.mine_inverted,
             opponent_inverted: self.opponent,
             mine_inverted: self.mine,
-            mine_transposed: self.opponent,
-            opponent_transposed: 0,
-        }
-    }
-
-    fn transpose(&self) -> Positions {
-        Positions {
-            opponent: self.opponent_transposed,
-            mine: self.mine_transposed,
-            mine_inverted: self.mine_inverted,
-            opponent_inverted: self.opponent_inverted,
-            mine_transposed: self.mine,
-            opponent_transposed: self.opponent,
         }
     }
 }
