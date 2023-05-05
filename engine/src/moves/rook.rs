@@ -1,11 +1,12 @@
 #![allow(arithmetic_overflow)]
 
-use crate::{location::Location, piece::Color};
-
+#[cfg(test)]
+use super::utils::debug;
 use super::{
-    utils::{debug, file, invert, invert_u64, rank, transpose},
-    Move, Positions,
+    utils::{file, invert, rank},
+    Positions,
 };
+use crate::location::Location;
 
 pub fn rook_moves(pos: &Positions, loc: Location) -> u64 {
     let rank = rank_positions(pos, loc);
@@ -16,13 +17,13 @@ pub fn rook_moves(pos: &Positions, loc: Location) -> u64 {
 #[inline]
 pub(super) fn rank_positions(pos: &Positions, loc: Location) -> u64 {
     let leftside = rank_leftside(pos, loc);
-    let rightside = invert_u64(rank_leftside(&pos.invert(), loc.invert()));
+    let rightside = invert(rank_leftside(&pos.invert(), loc.invert()));
     (leftside | rightside) & !loc.pos()
 }
 #[inline]
 pub(super) fn file_positions(pos: &Positions, loc: Location) -> u64 {
     let downwards = file_downwards(pos, loc);
-    let upwards = invert_u64(file_downwards(&pos.invert(), loc.invert()));
+    let upwards = invert(file_downwards(&pos.invert(), loc.invert()));
     downwards | upwards
 }
 
@@ -97,9 +98,9 @@ fn rank_test() {
     let opponent = (1 << 8) | (1 << 9);
     let pos = Positions {
         opponent,
-        mine_inverted: invert_u64(mine),
+        mine_inverted: invert(mine),
         mine,
-        opponent_inverted: invert_u64(opponent),
+        opponent_inverted: invert(opponent),
     };
 
     assert_eq!(rank_positions(&pos, (1, 4).into()), 0b00101110 << 8);
@@ -111,9 +112,9 @@ fn file_test() {
     let opponent = 1 << 51;
     let pos = Positions {
         opponent,
-        mine_inverted: invert_u64(mine),
+        mine_inverted: invert(mine),
         mine,
-        opponent_inverted: invert_u64(opponent),
+        opponent_inverted: invert(opponent),
     };
     let p = (2, 3).into();
     debug(opponent | mine);
@@ -124,13 +125,14 @@ fn file_test() {
 
 #[test]
 fn rook_test() {
+    use super::utils::debug;
     let mine = (1 << 15) | (1 << 14);
     let opponent = (1 << 8) | (1 << 9) | (1 << 52);
     let pos = Positions {
         opponent,
-        mine_inverted: invert_u64(mine),
+        mine_inverted: invert(mine),
         mine,
-        opponent_inverted: invert_u64(opponent),
+        opponent_inverted: invert(opponent),
     };
     debug(opponent);
     debug(rook_moves(&pos, (1, 4).into()));

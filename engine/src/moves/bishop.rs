@@ -1,16 +1,14 @@
 #![allow(clippy::precedence)]
+#[cfg(test)]
+use super::utils::debug;
+use super::{utils::invert, Positions};
 use crate::location::Location;
-
-use super::{
-    utils::{debug, invert_u64},
-    Positions,
-};
 
 pub fn bishop_moves(pos: &Positions, loc: Location) -> u64 {
     let first = rightside_moves(&pos, loc);
     let second = leftside_moves(&pos, loc);
-    let third = invert_u64(rightside_moves(&pos.invert(), loc.invert()));
-    let fourth = invert_u64(leftside_moves(&pos.invert(), loc.invert()));
+    let third = invert(rightside_moves(&pos.invert(), loc.invert()));
+    let fourth = invert(leftside_moves(&pos.invert(), loc.invert()));
     first | second | third | fourth
 }
 
@@ -69,9 +67,14 @@ fn left_diagonal(loc: Location) -> u64 {
 
 #[test]
 fn test_diag() {
-    let mine = (1 << 8) | (1 << 9);
-    let opponent = (1 << 55) | (1 << 54);
+    let opponent = (1 << 8) | (1 << 9);
+    let mine = (1 << 55) | (1 << 54) | (1 << 4);
     let pos = Positions::new(mine, opponent);
 
     debug(bishop_moves(&pos, (2, 2).into()));
+    println!("opponent");
+    debug(opponent);
+    println!("mine");
+    debug(mine);
+    assert_eq!(bishop_moves(&pos, (2, 2).into()), 35257554307584);
 }

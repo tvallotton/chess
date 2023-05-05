@@ -1,6 +1,6 @@
 use crate::{board::Board, location::Location, piece::Color};
 
-use self::utils::{invert, invert_u64, transpose};
+use self::utils::invert;
 
 pub mod bishop;
 pub mod rook;
@@ -43,20 +43,21 @@ fn positions(board: Board) -> Positions {
 
         *table |= 1 << (loc.rank() * 8 + loc.file());
     }
-    pos.mine_inverted = invert_u64(pos.mine);
-    pos.opponent_inverted = invert_u64(pos.opponent);
+    pos.mine_inverted = invert(pos.mine);
+    pos.opponent_inverted = invert(pos.opponent);
     pos
 }
 impl Positions {
     fn new(mine: u64, opponent: u64) -> Positions {
         let mut pos = Positions {
-            mine: 0,
-            opponent: 0,
+            mine,
+            opponent,
             mine_inverted: 0,
             opponent_inverted: 0,
         };
-        pos.mine_inverted = invert_u64(pos.mine);
-        pos.opponent_inverted = invert_u64(pos.opponent);
+
+        pos.mine_inverted = invert(pos.mine);
+        pos.opponent_inverted = invert(pos.opponent);
 
         pos
     }
