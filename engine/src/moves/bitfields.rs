@@ -1,16 +1,16 @@
 use crate::{board::Player, location::Location};
 
 pub struct Bitfields {
-    king: u64,
-    queen: u64,
-    knight: [u64; 2],
-    pawn: [u64; 8],
-    rook: [u64; 2],
-    bishop: [u64; 2],
+    pub king: u64,
+    pub queen: u64,
+    pub knight: [u64; 2],
+    pub pawn: [u64; 8],
+    pub rook: [u64; 2],
+    pub bishop: [u64; 2],
 }
 
 impl Bitfields {
-    fn new(player: Player) -> Bitfields {
+    pub fn new(player: &Player) -> Bitfields {
         let bitfield = |p: Option<Location>| {
             p.map(Location::pos)
                 .unwrap_or_default()

@@ -3,7 +3,10 @@ use crate::{
     location::Location,
 };
 
-use super::{utils::invert, Bitfields};
+use super::{
+    utils::{invert, or},
+    Bitfields,
+};
 
 pub struct Positions {
     pub opponent: u64,
@@ -13,13 +16,13 @@ pub struct Positions {
 }
 
 impl Positions {
-    pub fn from_board(mine: Bitfields, opponent: Bitfields) -> Positions {
-        fn or<const D: usize>(array: [u64; D]) -> u64 {
-            array
-                .iter()
-                .fold(0, |x, y| x | y)
-        }
+    pub fn from_board(board: Board) -> Positions {
+        let mine = Bitfields::new(board.me());
+        let opponent = Bitfields::new(board.opponent());
+        Positions::from_bitfields(mine, opponent)
+    }
 
+    pub fn from_bitfields(mine: Bitfields, opponent: Bitfields) -> Positions {
         let mine = mine.king
             | mine.queen
             | or(mine.knight)

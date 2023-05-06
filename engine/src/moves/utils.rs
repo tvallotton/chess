@@ -8,6 +8,12 @@ pub const fn rank(n: u8) -> u64 {
     0xff << (8 * n)
 }
 
+pub fn or<const D: usize>(array: [u64; D]) -> u64 {
+    array
+        .iter()
+        .fold(0, |x, y| x | y)
+}
+
 pub fn invert(mut x: u64) -> u64 {
     x = x >> 32 | (x << 32);
 

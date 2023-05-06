@@ -5,7 +5,7 @@ pub struct PawnMoves([u64; 2]);
 
 impl PawnMoves {}
 
-pub fn pawn_moves(pos: &Positions, loc: u64) -> PawnMoves {
+pub fn pawn_moves(pos: &Positions, loc: Location) -> u64 {
     todo!()
 }
 #[inline]

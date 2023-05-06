@@ -17,6 +17,10 @@ impl Location {
         1 << (self.rank() * 8 + self.file())
     }
 
+    pub fn is_queen(self) -> bool {
+        (self.0.get() & 0b10000000) != 0
+    }
+
     pub fn invert(self) -> Self {
         (7 - self.rank(), 7 - self.file()).into()
     }
