@@ -1,5 +1,3 @@
-
-
 #[inline]
 pub const fn file(n: u8) -> u64 {
     0x101010101010101 << n
@@ -26,18 +24,6 @@ pub fn invert(mut x: u64) -> u64 {
     x = (x >> 2) & mask | (x & mask) << 2;
 
     let mask = 0x5555555555555555;
-    x = (x >> 1) & mask | (x & mask) << 1;
-
-    x
-}
-
-pub const fn invert_u8(mut x: u8) -> u8 {
-    x = x >> 4 | (x << 4);
-
-    let mask = 0x33;
-    x = (x >> 2) & mask | (x & mask) << 2;
-
-    let mask = 0x55;
     x = (x >> 1) & mask | (x & mask) << 1;
 
     x

@@ -3,24 +3,24 @@ use std::mem::size_of;
 use crate::{
     location::Location,
     metadata::Metadata,
-    piece::{Color::*, Kind::*, Piece},
+    piece::{Color::*, Piece},
 };
 
 #[derive(Clone, Copy)]
 pub struct Board {
-    white: Player,
-    black: Player,
+    pub white: Player,
+    pub black: Player,
     pub meta: Metadata,
 }
 
 #[derive(Clone, Copy)]
 pub struct Player {
-    king: Option<Location>,
-    queen: Option<Location>,
-    bishop: [Option<Location>; 2],
-    knight: [Option<Location>; 2],
-    rook: [Option<Location>; 2],
-    pawn: [Option<Location>; 8],
+    pub king: Option<Location>,
+    pub queen: Option<Location>,
+    pub bishop: [Option<Location>; 2],
+    pub knight: [Option<Location>; 2],
+    pub rook: [Option<Location>; 2],
+    pub pawn: [Option<Location>; 8],
 }
 
 impl Default for Board {
@@ -29,6 +29,23 @@ impl Default for Board {
             white: Player::white(),
             black: Player::black(),
             meta: Metadata::default(),
+        }
+    }
+}
+
+impl Board {
+    #[inline]
+    pub fn me(&self) -> &Player {
+        match self.meta.turn() {
+            White => &self.white,
+            Black => &self.black,
+        }
+    }
+    #[inline]
+    pub fn opponent(&self) -> &Player {
+        match self.meta.turn() {
+            White => &self.black,
+            Black => &self.white,
         }
     }
 }
