@@ -50,7 +50,7 @@ impl MoveCache {
                 if pawn.is_queen() {
                     queen_moves(pos, pawn)
                 } else {
-                    pawn_moves(pos, pawn)
+                    pawn_moves(pos, pawn, me.color)
                 }
             })
             .unwrap_or_default()

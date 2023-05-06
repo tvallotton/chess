@@ -3,6 +3,7 @@ use std::mem::size_of;
 use crate::{
     location::Location,
     metadata::Metadata,
+    moves::Color,
     piece::{Color::*, Piece},
 };
 
@@ -21,6 +22,7 @@ pub struct Player {
     pub knight: [Option<Location>; 2],
     pub rook: [Option<Location>; 2],
     pub pawn: [Option<Location>; 8],
+    pub color: Color,
 }
 
 impl Default for Board {
@@ -53,6 +55,7 @@ impl Board {
 impl Player {
     fn white() -> Self {
         Player {
+            color: White,
             king: Some((7, 4).into()),
             queen: Some((7, 3).into()),
             bishop: [(7, 3), (7, 5)]
@@ -80,6 +83,7 @@ impl Player {
     }
     fn black() -> Self {
         Player {
+            color: Black,
             king: Some((0, 4).into()),
             queen: Some((0, 3).into()),
             bishop: [(0, 3), (0, 5)]
