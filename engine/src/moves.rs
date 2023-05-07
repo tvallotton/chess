@@ -20,8 +20,8 @@ pub mod rook;
 mod utils;
 
 pub struct Move {
-    from: Location,
-    to: Location,
+    pub from: Piece,
+    pub to: Location,
 }
 
 struct MoveIterator<'a> {
@@ -47,25 +47,22 @@ impl<'a> Iterator for MoveIterator<'a> {
                 return None;
             }
 
-            // skip first 8 pieces if its empty
-            let first_8 = (move_cache.halves[0] & *bit) == 0;
-            piece.at_least(8 * first_8 as usize);
+            // // skip first 8 pieces if its empty
+            // let first_8 = (move_cache.halves[0] & *bit) == 0;
+            // piece.at_least(8 * first_8 as usize);
 
             while !piece.finished() {
                 let moves = move_cache.get(*piece);
                 let from = move_cache.get_loc(*piece);
                 piece.next();
 
-                // skip second 8 pieces if its empty
-                let second_8 = (move_cache.halves[1] & *bit) == 0;
-                piece.at_least(16 * second_8 as usize);
+                // // skip second 8 pieces if its empty
+                // let second_8 = (move_cache.halves[1] & *bit) == 0;
+                // piece.at_least(16 * second_8 as usize);
 
                 if (moves & *bit) != 0 {
-                    // debug_assert!(from.is_some());
-                    let from = unsafe { from.unwrap_or_else(|| crate::location::loc(0, 0)) };
-
                     return Some(Move {
-                        from,
+                        from: *piece,
                         to: Location::from_pos(*bit),
                     });
                 }
@@ -77,8 +74,7 @@ impl<'a> Iterator for MoveIterator<'a> {
     }
 }
 
-pub fn moves(board: &Board) -> impl Iterator<Item = Move> + '_ {
-    let pos = Positions::from_board(board);
+pub fn moves(board: &Board, pos: Positions) -> impl Iterator<Item = Move> + '_ {
     let move_cache = MoveCache::new(board, &pos);
     let bit = 1;
     let piece = KING;
@@ -88,3 +84,8 @@ pub fn moves(board: &Board) -> impl Iterator<Item = Move> + '_ {
         piece,
     }
 }
+
+// pub fn children(board: &Board, pos: &Positions) -> impl Iterator<Item = Board> + '_ {
+//     let pos = Positions::from_board(board);
+//     let moves = moves(board, pos).map(|mov| board);
+// }

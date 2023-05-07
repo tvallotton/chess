@@ -30,3 +30,6 @@ impl Piece {
         self.0 = self.0.max(val as u8);
     }
 }
+
+
+

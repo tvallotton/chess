@@ -3,7 +3,7 @@ use std::mem::size_of;
 use crate::{
     location::Location,
     metadata::Metadata,
-    moves::Color,
+    moves::{Color, Move, Positions},
     piece::{Color::*, Piece},
 };
 
@@ -17,8 +17,7 @@ pub struct Board {
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct Player {
-    pub king: Option<Location>,
-    pub queen: Option<Location>,
+    pub royalty: [Option<Location>; 2],
     pub bishop: [Option<Location>; 2],
     pub knight: [Option<Location>; 2],
     pub rook: [Option<Location>; 2],
@@ -45,20 +44,71 @@ impl Board {
         }
     }
     #[inline]
+    pub fn me_mut(&mut self) -> &mut Player {
+        match self.meta.turn() {
+            White => &mut self.white,
+            Black => &mut self.black,
+        }
+    }
+    #[inline]
+    pub fn opponent_mut(&mut self) -> &mut Player {
+        match self.meta.turn() {
+            White => &mut self.black,
+            Black => &mut self.white,
+        }
+    }
+    #[inline]
     pub fn opponent(&self) -> &Player {
         match self.meta.turn() {
             White => &self.black,
             Black => &self.white,
         }
     }
+
+    pub fn apply(&self, mov: Move, pos: &Positions) -> Board {
+        let mut board = *self;
+
+        let loc = unsafe {
+            board
+                .me_mut()
+                .get(mov.from)
+                .as_mut()
+                .unwrap()
+        };
+        *loc = mov.to;
+        board
+    }
 }
 
 impl Player {
+    unsafe fn get(&mut self, piece: Piece) -> &mut Option<Location> {
+        let locations = self as *mut Player as *mut Option<Location>;
+        &mut *locations.offset(piece.0 as isize)
+    }
+
+    fn remove(&mut self, loc: Location) {
+        let rm_list = |pieces: &mut [_]| {
+            pieces
+                .iter_mut()
+                .for_each(|piece| {
+                    if *piece == Some(loc) {
+                        *piece = None
+                    }
+                });
+        };
+        rm_list(&mut self.royalty);
+        rm_list(&mut self.bishop);
+        rm_list(&mut self.knight);
+        rm_list(&mut self.rook);
+        rm_list(&mut self.pawn);
+    }
+
     fn white() -> Self {
         Player {
             color: White,
-            king: Some((7, 4).into()),
-            queen: Some((7, 3).into()),
+            royalty: [(7, 4), (7, 3)]
+                .map(Into::into)
+                .map(Some),
             bishop: [(7, 3), (7, 5)]
                 .map(Into::into)
                 .map(Some),
@@ -85,8 +135,10 @@ impl Player {
     fn black() -> Self {
         Player {
             color: Black,
-            king: Some((0, 4).into()),
-            queen: Some((0, 3).into()),
+            royalty: [(0, 4), (0, 3)]
+                .map(Into::into)
+                .map(Some),
+
             bishop: [(0, 3), (0, 5)]
                 .map(Into::into)
                 .map(Some),

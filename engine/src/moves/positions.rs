@@ -20,15 +20,15 @@ impl Positions {
     }
 
     pub fn from_bitfields(mine: Bitfields, opponent: Bitfields) -> Positions {
-        let mine = mine.king
-            | mine.queen
+        let mine = 0
+            | or(mine.royalty)
             | or(mine.knight)
             | or(mine.pawn)
             | or(mine.rook)
             | or(mine.bishop);
 
-        let opponent = opponent.king
-            | opponent.queen
+        let opponent = 0
+            | or(opponent.royalty)
             | or(opponent.knight)
             | or(opponent.pawn)
             | or(opponent.rook)

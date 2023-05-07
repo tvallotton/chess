@@ -1,8 +1,11 @@
 pub mod board;
+pub mod heuristic;
 pub mod location;
 pub mod metadata;
 pub mod moves;
 pub mod piece;
+pub mod search;
+use location::Location;
 pub use moves::bishop::bishop_moves;
 pub use moves::king::king_moves;
 pub use moves::knight::knight_moves;

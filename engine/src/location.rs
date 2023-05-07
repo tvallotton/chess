@@ -5,6 +5,12 @@ use crate::piece::Piece;
 #[derive(Clone, Copy)]
 pub struct Location(NonZeroU8);
 
+impl PartialEq for Location {
+    fn eq(&self, other: &Self) -> bool {
+        (self.0.get() & 0b01111110) == (other.0.get() & 0b01111110)
+    }
+}
+
 impl Location {
     pub fn rank(self) -> u8 {
         (self.0.get() >> 4) & 0b111

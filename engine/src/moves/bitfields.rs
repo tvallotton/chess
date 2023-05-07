@@ -1,8 +1,7 @@
 use crate::{board::Player, location::Location};
 
 pub struct Bitfields {
-    pub king: u64,
-    pub queen: u64,
+    pub royalty: [u64; 2],
     pub knight: [u64; 2],
     pub pawn: [u64; 8],
     pub rook: [u64; 2],
@@ -16,16 +15,14 @@ impl Bitfields {
                 .unwrap_or_default()
         };
 
-        let king = bitfield(player.king);
-        let queen = bitfield(player.queen);
+        let royalty = player.royalty.map(bitfield);
         let pawn = player.pawn.map(bitfield);
         let knight = player.knight.map(bitfield);
         let bishop = player.bishop.map(bitfield);
         let rook = player.rook.map(bitfield);
 
         Bitfields {
-            king,
-            queen,
+            royalty,
             knight,
             pawn,
             rook,

@@ -14,15 +14,14 @@ use super::{utils::or, Piece, Positions};
 
 #[repr(C)]
 pub struct MoveCache<'a> {
-    pub king: u64,
-    pub queen: u64,
+    pub royalty: [u64; 2],
     pub bishop: [u64; 2],
     pub knight: [u64; 2],
     pub rook: [u64; 2],
     pub pawn: [u64; 8],
     pub all: u64,
     pub halves: [u64; 2],
-    pub quarters: [[u64; 2]; 2],
+
     pub player: &'a Player,
 }
 
@@ -40,14 +39,14 @@ impl<'a> MoveCache<'a> {
     pub fn new(board: &'a Board, pos: &Positions) -> Self {
         let me = board.me();
 
-        let king = me
-            .king
+        let king = me.royalty[0]
             .map(|king| king_moves(pos, king))
             .unwrap_or_default();
-        let queen = me
-            .queen
+
+        let queen = me.royalty[1]
             .map(|queen| queen_moves(pos, queen))
             .unwrap_or_default();
+
         let rook = me.rook.map(|rooks| {
             rooks
                 .map(|rook| rook_moves(pos, rook))
@@ -75,31 +74,18 @@ impl<'a> MoveCache<'a> {
             .unwrap_or_default()
         });
 
-        let quarters = [
-            [king | queen | or(bishop), or(rook) | or(knight)],
-            [
-                pawn[0] | pawn[1] | pawn[2] | pawn[3],
-                pawn[4] | pawn[5] | pawn[6] | pawn[7],
-            ],
-        ];
-
-        let halves = [
-            quarters[0][1] | quarters[1][1],
-            quarters[1][0] | quarters[1][0],
-        ];
+        let halves = [king | queen | or(bishop) | or(rook) | or(knight), or(pawn)];
 
         let all = halves[0] | halves[1];
 
         MoveCache {
-            king,
-            queen,
+            royalty: [king, queen],
             bishop,
             rook,
             knight,
             pawn,
             all,
             halves,
-            quarters,
             player: me,
         }
     }
