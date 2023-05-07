@@ -15,6 +15,7 @@ pub struct Board {
 }
 
 #[derive(Clone, Copy)]
+#[repr(C)]
 pub struct Player {
     pub king: Option<Location>,
     pub queen: Option<Location>,

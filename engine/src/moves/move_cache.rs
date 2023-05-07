@@ -1,22 +1,43 @@
+#![allow(clippy::all)]
+use std::mem::transmute;
+
 use crate::{
-    bishop_moves, board::Board, king_moves, location::Location, moves::bishop, pawn_moves,
-    queen_moves, rook_moves,
+    bishop_moves,
+    board::{Board, Player},
+    king_moves,
+    location::Location,
+    moves::bishop,
+    pawn_moves, queen_moves, rook_moves,
 };
 
-use super::{utils::or, Positions};
+use super::{utils::or, Piece, Positions};
 
-pub struct MoveCache {
-    king: u64,
-    queen: u64,
-    bishop: [u64; 2],
-    rook: [u64; 2],
-    knight: [u64; 2],
-    pawn: [u64; 8],
-    union: u64,
+#[repr(C)]
+pub struct MoveCache<'a> {
+    pub king: u64,
+    pub queen: u64,
+    pub bishop: [u64; 2],
+    pub knight: [u64; 2],
+    pub rook: [u64; 2],
+    pub pawn: [u64; 8],
+    pub all: u64,
+    pub halves: [u64; 2],
+    pub quarters: [[u64; 2]; 2],
+    pub player: &'a Player,
 }
 
-impl MoveCache {
-    pub fn new(board: Board, pos: &Positions) -> Self {
+impl<'a> MoveCache<'a> {
+    pub fn get(&self, piece: Piece) -> u64 {
+        let bitfields = self as *const Self as *const u64;
+        unsafe { *bitfields.offset(piece.0 as isize) }
+    }
+
+    pub fn get_loc(&self, piece: Piece) -> Option<Location> {
+        let locations = self.player as *const Player as *const Option<Location>;
+        unsafe { *locations.offset(piece.0 as isize) }
+    }
+
+    pub fn new(board: &'a Board, pos: &Positions) -> Self {
         let me = board.me();
 
         let king = me
@@ -43,8 +64,6 @@ impl MoveCache {
                 .unwrap_or_default()
         });
 
-        // const PAWN_MOVES: [fn(&Positions, Location) -> u64; 2] = [queen_moves, pawn_moves];
-
         let pawn = me.pawn.map(|pawn| {
             pawn.map(|pawn| {
                 if pawn.is_queen() {
@@ -56,7 +75,20 @@ impl MoveCache {
             .unwrap_or_default()
         });
 
-        let union = king | queen | or(rook) | or(bishop) | or(knight) | or(pawn);
+        let quarters = [
+            [king | queen | or(bishop), or(rook) | or(knight)],
+            [
+                pawn[0] | pawn[1] | pawn[2] | pawn[3],
+                pawn[4] | pawn[5] | pawn[6] | pawn[7],
+            ],
+        ];
+
+        let halves = [
+            quarters[0][1] | quarters[1][1],
+            quarters[1][0] | quarters[1][0],
+        ];
+
+        let all = halves[0] | halves[1];
 
         MoveCache {
             king,
@@ -65,7 +97,10 @@ impl MoveCache {
             rook,
             knight,
             pawn,
-            union,
+            all,
+            halves,
+            quarters,
+            player: me,
         }
     }
 }

@@ -1,7 +1,4 @@
-use crate::{
-    board::{Board, Player},
-    location::Location,
-};
+use crate::board::Board;
 
 use super::{
     utils::{invert, or},
@@ -16,7 +13,7 @@ pub struct Positions {
 }
 
 impl Positions {
-    pub fn from_board(board: Board) -> Positions {
+    pub fn from_board(board: &Board) -> Positions {
         let mine = Bitfields::new(board.me());
         let opponent = Bitfields::new(board.opponent());
         Positions::from_bitfields(mine, opponent)

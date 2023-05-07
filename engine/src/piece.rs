@@ -1,19 +1,32 @@
 use std::{fmt::Debug, mem::transmute, num::NonZeroU8, ops::BitOr};
 
-#[derive(Clone, Copy)]
-
-/// Zero is reserved as a niche.
-pub struct Piece(pub NonZeroU8);
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Color {
     White = 0b10,
     Black = 0b11,
 }
+#[derive(Clone, Copy)]
+pub struct Piece(pub(super) u8);
 
-pub const PAWN: u8 = 0b00100;
-pub const BISHOP: u8 = 0b01000;
-pub const KNIGHT: u8 = 0b01100;
-pub const QUEEN: u8 = 0b10000;
-pub const KING: u8 = 0b10100;
-pub const ROOK: u8 = 0b11000;
+pub const KING: Piece = Piece(0);
+pub const QUEEN: Piece = Piece(1);
+pub const BISHOP: Piece = Piece(2);
+pub const KNIGHT: Piece = Piece(4);
+pub const ROOK: Piece = Piece(6);
+pub const PAWN: Piece = Piece(8);
+
+impl Piece {
+    #[inline]
+    pub fn next(&mut self) {
+        self.0 = self.0.saturating_add(1);
+    }
+
+    pub fn finished(&mut self) -> bool {
+        self.0 >= 16
+    }
+
+    #[inline]
+    pub fn at_least(&mut self, val: usize) {
+        self.0 = self.0.max(val as u8);
+    }
+}

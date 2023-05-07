@@ -1,7 +1,4 @@
-use crate::{
-    location::Location,
-    moves::utils::{debug, file},
-};
+use crate::{location::Location, moves::utils::file};
 
 use super::Positions;
 

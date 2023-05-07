@@ -1,8 +1,8 @@
-mod board;
-mod location;
-mod metadata;
-mod moves;
-mod piece;
+pub mod board;
+pub mod location;
+pub mod metadata;
+pub mod moves;
+pub mod piece;
 pub use moves::bishop::bishop_moves;
 pub use moves::king::king_moves;
 pub use moves::knight::knight_moves;
@@ -10,3 +10,4 @@ pub use moves::move_cache::MoveCache;
 pub use moves::pawn::pawn_moves;
 pub use moves::queen::queen_moves;
 pub use moves::rook::rook_moves;
+pub use piece::Piece;

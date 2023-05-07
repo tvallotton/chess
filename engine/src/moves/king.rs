@@ -1,6 +1,6 @@
 use crate::{location::Location, moves::Positions};
 
-use super::utils::{debug, file};
+use super::utils::file;
 
 const MASK: u64 = 0b000001110000010100000111;
 
@@ -17,6 +17,7 @@ pub fn king_moves(pos: &Positions, loc: Location) -> u64 {
 
 #[test]
 fn test_king() {
+    use super::utils::debug;
     let loc = (3, 0).into();
     debug(king_moves(&Positions::new(0, 0), loc));
     debug(loc.pos());
