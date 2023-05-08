@@ -1,3 +1,4 @@
+#![allow(clippy::identity_op)]
 use crate::board::Board;
 
 use super::{

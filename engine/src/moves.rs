@@ -53,7 +53,6 @@ impl<'a> Iterator for MoveIterator<'a> {
 
             while !piece.finished() {
                 let moves = move_cache.get(*piece);
-                let from = move_cache.get_loc(*piece);
                 piece.next();
 
                 // // skip second 8 pieces if its empty
@@ -74,7 +73,7 @@ impl<'a> Iterator for MoveIterator<'a> {
     }
 }
 
-pub fn moves(board: &Board, pos: Positions) -> impl Iterator<Item = Move> + '_ {
+pub fn moves<'a>(board: &'a Board, pos: &Positions) -> impl Iterator<Item = Move> + 'a {
     let move_cache = MoveCache::new(board, &pos);
     let bit = 1;
     let piece = KING;
@@ -85,7 +84,7 @@ pub fn moves(board: &Board, pos: Positions) -> impl Iterator<Item = Move> + '_ {
     }
 }
 
-// pub fn children(board: &Board, pos: &Positions) -> impl Iterator<Item = Board> + '_ {
-//     let pos = Positions::from_board(board);
-//     let moves = moves(board, pos).map(|mov| board);
-// }
+pub fn children(board: &Board) -> impl Iterator<Item = Board> + '_ {
+    let pos = Positions::from_board(board);
+    moves(board, &pos).map(move |mov| board.apply(mov, &pos))
+}

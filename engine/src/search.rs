@@ -1,43 +1,48 @@
-use crate::{board::Board, heuristic};
+use crate::{board::Board, heuristic::material, moves::Color};
+use smallvec::SmallVec;
+pub struct Params {
+    sort_depth: i32,
+}
 
-// fn minimax(board: &Board, depth: i32, mut alpha: i32, mut beta: i32) -> i32 {
-//     if depth <= 0 {
-//         return heuristic::material(board);
-//     }
+fn minimax(board: &Board, depth: i32, mut alpha: i32, mut beta: i32, params: &Params) -> i32 {
+    if depth <= 0 {
+        return material(board);
+    }
 
-//     if let White = self.turn {
-//         let mut max = f32::NEG_INFINITY;
+    if Color::White == board.meta.turn() {
+        let mut max = i32::MIN;
 
-//         let mut children = self.children_heuristic(params);
+        let mut children: SmallVec<[Board; 64]> = board.children().collect();
 
-//         if depth >= params.sort_depth {
-//             children.sort_by_key(|(b, _)| FloatOrd(-b.cached_heuristic()));
-//         }
-//         for (child, _) in &children {
-//             let score = child.minimax(params, depth - 1, alpha, beta, s);
-//             max = max.max(score);
-//             alpha = alpha.max(score);
-//             if beta <= alpha {
-//                 s.pruned[params.max_depth - depth as usize] += 1;
-//                 break;
-//             }
-//         }
-//         max
-//     } else {
-//         let mut min = f32::INFINITY;
-//         let mut children = self.children_heuristic(params);
-//         if depth >= params.sort_depth {
-//             children.sort_by_key(|(b, _)| FloatOrd(b.cached_heuristic()));
-//         }
-//         for (child, _) in &children {
-//             let score = child.minimax(params, depth - 1, alpha, beta, s);
-//             min = min.min(score);
-//             beta = beta.min(score);
-//             if beta <= alpha {
-//                 s.pruned[params.max_depth - depth as usize] += 1;
-//                 break;
-//             }
-//         }
-//         min
-//     }
-// }
+        if depth >= params.sort_depth {
+            children.sort_by_cached_key(|board| -material(board));
+        }
+
+        for child in &children {
+            let score = minimax(child, depth - 1, alpha, beta, params);
+            max = max.max(score);
+            alpha = alpha.max(score);
+            if beta <= alpha {
+                break;
+            }
+        }
+        max
+    } else {
+        let mut min = i32::MAX;
+        let mut children: SmallVec<[Board; 64]> = board.children().collect();
+
+        if depth >= params.sort_depth {
+            children.sort_by_cached_key(|board| material(board));
+        }
+
+        for child in &children {
+            let score = minimax(child, depth - 1, alpha, beta, params);
+            min = min.min(score);
+            beta = beta.min(score);
+            if beta <= alpha {
+                break;
+            }
+        }
+        min
+    }
+}

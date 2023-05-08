@@ -1,9 +1,7 @@
-use std::mem::size_of;
-
 use crate::{
     location::Location,
     metadata::Metadata,
-    moves::{Color, Move, Positions},
+    moves::{children, Color, Move, Positions},
     piece::{Color::*, Piece},
 };
 
@@ -73,10 +71,23 @@ impl Board {
                 .me_mut()
                 .get(mov.from)
                 .as_mut()
-                .unwrap()
+                .unwrap_unchecked()
         };
         *loc = mov.to;
+
+        let is_capture = (pos.opponent & mov.to.pos()) != 0;
+
+        if is_capture {
+            board
+                .opponent_mut()
+                .remove(mov.to);
+        }
+
         board
+    }
+
+    pub fn children(&self) -> impl Iterator<Item = Board> + '_ {
+        children(self)
     }
 }
 
@@ -87,20 +98,19 @@ impl Player {
     }
 
     fn remove(&mut self, loc: Location) {
-        let rm_list = |pieces: &mut [_]| {
-            pieces
-                .iter_mut()
-                .for_each(|piece| {
-                    if *piece == Some(loc) {
-                        *piece = None
-                    }
-                });
-        };
-        rm_list(&mut self.royalty);
-        rm_list(&mut self.bishop);
-        rm_list(&mut self.knight);
-        rm_list(&mut self.rook);
-        rm_list(&mut self.pawn);
+        fn rm_list<const D: usize>(pieces: &mut [Option<Location>; D], loc: Location) {
+            for piece in pieces {
+                if *piece == Some(loc) {
+                    *piece = None
+                }
+            }
+        }
+
+        rm_list(&mut self.royalty, loc);
+        rm_list(&mut self.bishop, loc);
+        rm_list(&mut self.knight, loc);
+        rm_list(&mut self.rook, loc);
+        rm_list(&mut self.pawn, loc);
     }
 
     fn white() -> Self {
@@ -166,5 +176,5 @@ impl Player {
 
 #[test]
 fn foo() {
-    println!("board1 {}", size_of::<Board>());
+    println!("board1 {}", std::mem::size_of::<Board>());
 }
