@@ -1,19 +1,19 @@
 use crate::square::Square;
 use crate::use_select::{use_selected, UseSelected};
 use dioxus::prelude::*;
-use engine::{Board, Color, Move, Params, Position};
+use engine::{Board, Color, Location, Move, Params};
 use std::rc::Rc;
 
 #[derive(Props, PartialEq)]
 pub struct Props {
     pub board: UseState<Board>,
-    pub selected: UseState<Option<Position>>,
+    pub selected: UseState<Option<Location>>,
     pub play_as: Color,
     pub params: Params,
     pub allow_play: bool,
 }
 
-pub fn color(rank: i8, file: i8) -> Color {
+pub fn color(rank: u8, file: u8) -> Color {
     if (rank + file) % 2 == 0 {
         Color::White
     } else {
@@ -34,7 +34,7 @@ pub const Board: Component<Props> = |ref s| {
         let mut row = html!();
         for &file in range {
             let color = color(rank, file);
-            let piece = board[(rank, file)];
+            let piece = board.search_for((rank, file).into());
             let highlighted = highlighted.clone();
             let selected = selected.clone();
             let square = html! (
@@ -60,9 +60,12 @@ pub const Board: Component<Props> = |ref s| {
     s.render(total)
 };
 
-fn highlighted(board: &Board, selected: &UseSelected) -> Vec<Position> {
+fn highlighted(board: &Board, selected: &UseSelected) -> Vec<Location> {
     for &selected in &*selected.pos {
-        if board[selected].is_some() {
+        if board
+            .search_for(selected)
+            .is_some()
+        {
             return board
                 .moves_for_piece(selected.into())
                 .map(|mv| mv.to)
@@ -72,7 +75,7 @@ fn highlighted(board: &Board, selected: &UseSelected) -> Vec<Position> {
     vec![]
 }
 
-fn range(play_as: Color) -> Vec<i8> {
+fn range(play_as: Color) -> Vec<u8> {
     match play_as {
         Color::White => (0..8).collect(),
         Color::Black => (0..8).rev().collect(),

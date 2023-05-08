@@ -73,7 +73,7 @@ impl<'a> Iterator for MoveIterator<'a> {
     }
 }
 
-pub fn moves<'a>(board: &'a Board, pos: &Positions) -> impl Iterator<Item = Move> + 'a {
+pub fn _moves<'a>(board: &'a Board, pos: &Positions) -> impl Iterator<Item = Move> + 'a {
     let move_cache = MoveCache::new(board, &pos);
     let bit = 1;
     let piece = KING;
@@ -83,8 +83,12 @@ pub fn moves<'a>(board: &'a Board, pos: &Positions) -> impl Iterator<Item = Move
         piece,
     }
 }
+pub fn moves(board: &Board) -> impl Iterator<Item = Move> + '_ {
+    let pos = Positions::from_board(board);
+    _moves(board, &pos)
+}
 
 pub fn children(board: &Board) -> impl Iterator<Item = Board> + '_ {
     let pos = Positions::from_board(board);
-    moves(board, &pos).map(move |mov| board.apply(mov, &pos))
+    _moves(board, &pos).map(move |mov| board.apply(mov, &pos))
 }

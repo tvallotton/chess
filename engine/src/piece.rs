@@ -1,10 +1,26 @@
-use std::{fmt::Debug, mem::transmute, num::NonZeroU8, ops::BitOr};
+use std::{
+    fmt::{Debug, Display},
+    mem::transmute,
+    num::NonZeroU8,
+    ops::BitOr,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Color {
     White = 0b10,
     Black = 0b11,
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Kind {
+    King,
+    Queen,
+    Bishop,
+    Knight,
+    Rook,
+    Pawn,
+}
+
 #[derive(Clone, Copy)]
 pub struct Piece(pub(super) u8);
 
@@ -31,5 +47,11 @@ impl Piece {
     }
 }
 
-
-
+impl Display for Color {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Color::Black => write!(f, "black"),
+            Color::White => write!(f, "white"),
+        }
+    }
+}

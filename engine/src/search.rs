@@ -1,10 +1,22 @@
 use crate::{board::Board, heuristic::material, moves::Color};
 use smallvec::SmallVec;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Params {
     sort_depth: i32,
+    pub depth: i32,
 }
 
-fn minimax(board: &Board, depth: i32, mut alpha: i32, mut beta: i32, params: &Params) -> i32 {
+impl Default for Params {
+    fn default() -> Self {
+        Params {
+            sort_depth: 3,
+            depth: 4,
+        }
+    }
+}
+
+pub fn minimax(board: &Board, depth: i32, mut alpha: i32, mut beta: i32, params: &Params) -> i32 {
     if depth <= 0 {
         return material(board);
     }

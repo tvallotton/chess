@@ -7,12 +7,12 @@ use crate::page::Page;
 use crate::parameters::Parameters;
 use dioxus::prelude::*;
 use dioxus_html_macro::html;
-use engine::{Color, Params, Position};
+use engine::{Color, Location, Params};
 use UseState as U;
 
 pub fn Play(s: Scope) -> Element {
     let player = use_color(&s)?;
-    let selected: &U<Option<Position>> = use_state(&s, || None);
+    let selected: &U<Option<Location>> = use_state(&s, || None);
     let board: &U<engine::Board> = use_state(&s, Default::default);
     let params = use_state(&s, Params::default);
     let allow_play = true; //board.turn == player;

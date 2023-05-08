@@ -1,10 +1,10 @@
 use crate::board::Props;
 use dioxus::prelude::*;
-use engine::{Board, Position};
+use engine::{Board, Location};
 
 #[derive(Clone, PartialEq)]
 pub struct UseSelected {
-    pub pos: UseState<Option<Position>>,
+    pub pos: UseState<Option<Location>>,
     pub allow_play: bool,
     pub board: UseState<Board>,
 }
@@ -18,7 +18,7 @@ pub fn use_selected<'a>(s: &'a Scope<Props>) -> UseSelected {
 }
 
 impl UseSelected {
-    pub fn set(&self, pos: Position) {
+    pub fn set(&self, pos: Location) {
         match *self.pos {
             Some(prev) => {
                 let mut board: Board = (*self.board).clone();
@@ -33,14 +33,14 @@ impl UseSelected {
             None => self.set_new(pos),
         }
     }
-    pub fn is_valid(&self, pos: Position) -> bool {
+    pub fn is_valid(&self, pos: Location) -> bool {
         if let Some(piece) = self.board[pos] {
             return self.allow_play && piece.color == self.board.turn;
         }
         false
     }
 
-    pub fn set_new(&self, pos: Position) {
+    pub fn set_new(&self, pos: Location) {
         if self.is_valid(pos) {
             self.pos.set(Some(pos));
         }
