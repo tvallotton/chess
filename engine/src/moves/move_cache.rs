@@ -10,7 +10,7 @@ use crate::{
     pawn_moves, queen_moves, rook_moves,
 };
 
-use super::{utils::or, Piece, Positions};
+use super::{utils::or, PieceIndex, Positions};
 
 #[repr(C)]
 pub struct MoveCache<'a> {
@@ -26,12 +26,12 @@ pub struct MoveCache<'a> {
 }
 
 impl<'a> MoveCache<'a> {
-    pub fn get(&self, piece: Piece) -> u64 {
+    pub fn get(&self, piece: PieceIndex) -> u64 {
         let bitfields = self as *const Self as *const u64;
         unsafe { *bitfields.offset(piece.0 as isize) }
     }
 
-    pub fn get_loc(&self, piece: Piece) -> Option<Location> {
+    pub fn get_loc(&self, piece: PieceIndex) -> Option<Location> {
         let locations = self.player as *const Player as *const Option<Location>;
         unsafe { *locations.offset(piece.0 as isize) }
     }

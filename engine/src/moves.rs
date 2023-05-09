@@ -20,14 +20,14 @@ pub mod rook;
 mod utils;
 
 pub struct Move {
-    pub from: Piece,
+    pub from: PieceIndex,
     pub to: Location,
 }
 
 struct MoveIterator<'a> {
     bit: u64,
     move_cache: MoveCache<'a>,
-    piece: Piece,
+    piece: PieceIndex,
 }
 
 impl<'a> Iterator for MoveIterator<'a> {
@@ -90,5 +90,5 @@ pub fn moves(board: &Board) -> impl Iterator<Item = Move> + '_ {
 
 pub fn children(board: &Board) -> impl Iterator<Item = Board> + '_ {
     let pos = Positions::from_board(board);
-    _moves(board, &pos).map(move |mov| board.apply(mov, &pos))
+    _moves(board, &pos).map(move |mov| board._apply(mov, &pos))
 }

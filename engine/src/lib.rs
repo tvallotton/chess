@@ -17,4 +17,5 @@ pub use moves::rook::rook_moves;
 pub use moves::Move;
 pub use piece::Color;
 pub use piece::Piece;
+pub use piece::PieceIndex;
 pub use search::Params;

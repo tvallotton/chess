@@ -1,6 +1,6 @@
 use std::{num::NonZeroU8, ops::BitOr};
 
-use crate::piece::Piece;
+use crate::piece::PieceIndex;
 
 #[derive(Clone, Copy)]
 pub struct Location(NonZeroU8);
@@ -49,8 +49,8 @@ pub fn loc(rank: u8, file: u8) -> Location {
     (rank, file).into()
 }
 
-impl<T: Into<Location>> BitOr<T> for Piece {
-    type Output = (Piece, Location);
+impl<T: Into<Location>> BitOr<T> for PieceIndex {
+    type Output = (PieceIndex, Location);
     fn bitor(self, rhs: T) -> Self::Output {
         (self, rhs.into())
     }

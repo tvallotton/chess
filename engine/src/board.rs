@@ -3,8 +3,8 @@ use std::ops::Index;
 use crate::{
     location::Location,
     metadata::Metadata,
-    moves::{children, moves, Color, Move, Positions},
-    piece::{Color::*, Piece},
+    moves::{children, moves, Color, Kind, Move, Piece, Positions, BISHOP},
+    piece::{Color::*, PieceIndex},
     search::minimax,
     Params,
 };
@@ -67,7 +67,14 @@ impl Board {
         }
     }
 
-    pub fn apply(&self, mov: Move, pos: &Positions) -> Board {
+    pub fn apply(&self, (to, from): (Location, Location)) -> Option<Board> {
+        let pos = &Positions::from_board(self);
+        let from = self.search_for(from)?.index;
+        let mov = Move { to, from };
+        Some(self._apply(mov, pos))
+    }
+
+    pub fn _apply(&self, mov: Move, pos: &Positions) -> Board {
         let mut board = *self;
 
         let loc = unsafe {
@@ -96,13 +103,19 @@ impl Board {
 }
 
 impl Player {
-    unsafe fn get_mut(&mut self, piece: Piece) -> &mut Option<Location> {
-        let locations = self as *mut Player as *mut Option<Location>;
-        &mut *locations.offset(piece.0 as isize)
+    unsafe fn get_mut(&mut self, piece: PieceIndex) -> &mut Option<Location> {
+        &mut self.locations_mut()[piece.0 as usize]
     }
-    unsafe fn get(&self, piece: Piece) -> &Option<Location> {
-        let locations = self as *const Player as *const Option<Location>;
-        &*locations.offset(piece.0 as isize)
+    unsafe fn get(&self, piece: PieceIndex) -> &Option<Location> {
+        &self.locations()[piece.0 as usize]
+    }
+
+    pub fn locations(&self) -> &[Option<Location>; 16] {
+        unsafe { &*(self as *const Player as *const [Option<Location>; 16]) }
+    }
+
+    pub fn locations_mut(&mut self) -> &mut [Option<Location>; 16] {
+        unsafe { &mut *(self as *mut Player as *mut [Option<Location>; 16]) }
     }
 
     fn remove(&mut self, loc: Location) {
@@ -196,22 +209,23 @@ impl Board {
         children[0]
     }
 
-    pub fn search_for(mut self, index: Location) -> Option<Location> {
-        let mut piece = Piece(0);
-        while !piece.finished() {
-            let loc = unsafe { *self.black.get(piece) };
-            if loc == Some(index) {
-                return loc;
-            }
-            let loc = unsafe { *self.white.get(piece) };
+    pub fn search_for(self, index: Location) -> Option<Piece> {
+        let find = |p: &Player| {
+            let (index, _) = p
+                .locations()
+                .into_iter()
+                .enumerate()
+                .find(|(_, x)| **x == Some(index))?;
+            let index = PieceIndex(index as u8);
+            Some(Piece {
+                kind: index.kind(),
+                color: p.color,
+                index,
+            })
+        };
 
-            if loc == Some(index) {
-                return loc;
-            }
-
-            piece.next();
-        }
-        None
+        let me = self.me();
+        find(self.me()).or_else(|| find(self.opponent()))
     }
 
     pub fn moves_for_piece(&self, loc: Location) -> impl Iterator<Item = Move> + '_ {

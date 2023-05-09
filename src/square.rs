@@ -1,15 +1,15 @@
 use crate::use_select::UseSelected;
 use dioxus::prelude::*;
 use dioxus_html_macro::html;
-use engine::{Color, Piece, Position};
+use engine::{Color, Location, Piece};
 use std::rc::Rc;
 
 #[derive(Props, PartialEq)]
 pub struct Props {
     pub color: Color,
-    pub highlighted: Rc<Vec<Position>>,
+    pub highlighted: Rc<Vec<Location>>,
     pub piece: Option<Option<Piece>>,
-    pub pos: Position,
+    pub pos: Location,
     pub selected: UseSelected,
 }
 
@@ -51,13 +51,13 @@ impl Props {
 }
 
 fn icon<'a>(piece: Option<Piece>) -> LazyNodes<'a, 'a> {
-    for piece in piece {
-        return html!(
-            <img
-                class="piece-icon"
-                src="public/{piece.color}/{piece.kind}.svg"
-                alt="{piece.kind}"/>
-        );
-    }
-    html!()
+    let Some(piece) = piece else {
+        return html!()
+    };
+    html!(
+        <img
+            class="piece-icon"
+            src="public/{piece.color}/{piece.kind}.svg"
+            alt="{piece.kind}"/>
+    )
 }

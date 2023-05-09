@@ -22,7 +22,7 @@ impl UseSelected {
         match *self.pos {
             Some(prev) => {
                 let mut board: Board = (*self.board).clone();
-                if let Ok(_) = (&mut board).apply((pos, prev).into()) {
+                if let Some(_) = (&mut board).apply((pos, prev).into()) {
                     self.board.set(board);
                     self.pos.set(None);
                 } else {
@@ -34,8 +34,8 @@ impl UseSelected {
         }
     }
     pub fn is_valid(&self, pos: Location) -> bool {
-        if let Some(piece) = self.board[pos] {
-            return self.allow_play && piece.color == self.board.turn;
+        if let Some(piece) = self.board.search_for(pos) {
+            return self.allow_play && piece.color == self.board.meta.turn();
         }
         false
     }

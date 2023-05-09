@@ -42,8 +42,9 @@ pub fn Play(s: Scope) -> Element {
 }
 
 fn use_color(s: &Scope) -> Option<Color> {
-    use_route(s)
-        .segment("player")?
-        .parse()
-        .ok()
+    match use_route(s).segment("player")? {
+        "white" => Some(Color::White),
+        "black" => Some(Color::Black),
+        _ => None,
+    }
 }
