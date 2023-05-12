@@ -9,14 +9,14 @@ use crate::{
     Params,
 };
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct Board {
     pub white: Player,
     pub black: Player,
     pub meta: Metadata,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 #[repr(C)]
 pub struct Player {
     pub royalty: [Option<Location>; 2],
@@ -134,16 +134,16 @@ impl Player {
         rm_list(&mut self.pawn, loc);
     }
 
-    fn white() -> Self {
+    pub fn white() -> Self {
         Player {
             color: White,
             royalty: [(7, 4), (7, 3)]
                 .map(Into::into)
                 .map(Some),
-            bishop: [(7, 3), (7, 5)]
+            bishop: [(7, 2), (7, 5)]
                 .map(Into::into)
                 .map(Some),
-            knight: [(7, 2), (7, 6)]
+            knight: [(7, 1), (7, 6)]
                 .map(Into::into)
                 .map(Some),
             rook: [(7, 0), (7, 7)]
@@ -170,10 +170,10 @@ impl Player {
                 .map(Into::into)
                 .map(Some),
 
-            bishop: [(0, 3), (0, 5)]
+            bishop: [(0, 2), (0, 5)]
                 .map(Into::into)
                 .map(Some),
-            knight: [(0, 2), (0, 6)]
+            knight: [(0, 1), (0, 6)]
                 .map(Into::into)
                 .map(Some),
             rook: [(0, 0), (0, 7)]
