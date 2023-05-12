@@ -41,7 +41,7 @@ impl Piece {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct PieceIndex(pub(super) u8);
 
 pub const KING: PieceIndex = PieceIndex(0);
@@ -75,6 +75,11 @@ impl PieceIndex {
             6 | 7 => Kind::Rook,
             _ => Kind::Pawn,
         }
+    }
+}
+impl Debug for PieceIndex {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}[{}]", self.kind(), self.0)
     }
 }
 

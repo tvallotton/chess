@@ -1,8 +1,8 @@
-use std::{num::NonZeroU8, ops::BitOr};
+use std::{fmt::Debug, num::NonZeroU8, ops::BitOr};
 
 use crate::piece::PieceIndex;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct Location(NonZeroU8);
 
 impl PartialEq for Location {
@@ -60,6 +60,12 @@ impl From<(u8, u8)> for Location {
     fn from((rank, file): (u8, u8)) -> Self {
         let non_zero = ((rank << 3) | file) << 1 | 1;
         unsafe { Location(NonZeroU8::new_unchecked(non_zero)) }
+    }
+}
+
+impl Debug for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.rank(), self.file())
     }
 }
 

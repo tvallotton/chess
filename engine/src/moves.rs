@@ -1,4 +1,5 @@
 pub use super::piece::{Color, *};
+use crate::moves::utils::debug;
 use crate::{board, MoveCache};
 use crate::{board::Board, location::Location};
 use std::iter::from_fn;
@@ -40,28 +41,42 @@ impl<'a> Iterator for MoveIterator<'a> {
         } = self;
         loop {
             // skip first 8 pieces if its empty
-            while (move_cache.all & *bit) != 0 {
+            while (move_cache.all & *bit) == 0 {
+                if *bit == 0 {
+                    return None;
+                }
                 *bit <<= 1;
             }
             if *bit == 0 {
                 return None;
             }
-
-            // // skip first 8 pieces if its empty
-            // let first_8 = (move_cache.halves[0] & *bit) == 0;
-            // piece.at_least(8 * first_8 as usize);
+            log::debug!("asd");
+            // skip first 8 pieces if its empty
+            let first_8 = (move_cache.halves[0] & *bit) == 0;
+            piece.at_least(8 * first_8 as usize);
 
             while !piece.finished() {
                 let moves = move_cache.get(*piece);
+                let from = *piece;
                 piece.next();
 
                 // // skip second 8 pieces if its empty
                 // let second_8 = (move_cache.halves[1] & *bit) == 0;
                 // piece.at_least(16 * second_8 as usize);
+                // if (piece.kind() == Kind::Knight && Location::from_pos(*bit).rank() == 6) {
+                //     log::debug!(
+                //         "moves: {moves} bit: {bit:?} loc: {:?} piece: {from:?} intersect: {}",
+                //         Location::from_pos(*bit),
+                //         moves & *bit
+                //     );
+                //     debug(moves);
+                //     debug(*bit);
+                // }
 
                 if (moves & *bit) != 0 {
+                    log::debug!("YESS");
                     return Some(Move {
-                        from: *piece,
+                        from,
                         to: Location::from_pos(*bit),
                     });
                 }
@@ -73,7 +88,7 @@ impl<'a> Iterator for MoveIterator<'a> {
     }
 }
 
-pub fn _moves<'a>(board: &'a Board, pos: &Positions) -> impl Iterator<Item = Move> + 'a {
+fn _moves<'a>(board: &'a Board, pos: &Positions) -> impl Iterator<Item = Move> + 'a {
     let move_cache = MoveCache::new(board, &pos);
     let bit = 1;
     let piece = KING;

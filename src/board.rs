@@ -1,6 +1,7 @@
 use crate::square::Square;
 use crate::use_select::{use_selected, UseSelected};
 use dioxus::prelude::*;
+use engine::moves;
 use engine::{Board, Color, Location, Move, Params};
 use std::rc::Rc;
 
@@ -62,12 +63,14 @@ pub const Board: Component<Props> = |ref s| {
 
 fn highlighted(board: &Board, selected: &UseSelected) -> Vec<Location> {
     for &selected in &*selected.pos {
+        log::info!("Move count {}", moves(board).count());
+
         if board
             .search_for(selected)
             .is_some()
         {
             return board
-                .moves_for_piece(selected.into())
+                .moves_for_piece(selected)
                 .map(|mv| mv.to)
                 .collect();
         }

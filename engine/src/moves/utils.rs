@@ -36,11 +36,17 @@ pub fn invert(mut x: u64) -> u64 {
 }
 
 pub fn debug(x: u64) {
+    use std::fmt::Write;
+    let mut out = String::new();
     for i in 0..8 {
         for j in 0..8 {
-            print!("{}", (x >> (i * 8)) >> j & 1);
+            write!(out, "{}", (x >> (i * 8)) >> j & 1).unwrap();
         }
-        println!();
+        writeln!(out).unwrap();
     }
-    println!();
+    writeln!(out).unwrap();
+    #[cfg(not(target_arch = "wasm32"))]
+    println!("{}", out);
+    #[cfg(target_arch = "wasm32")]
+    log::debug!("{}", out);
 }

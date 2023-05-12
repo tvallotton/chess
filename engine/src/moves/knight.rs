@@ -1,6 +1,6 @@
 use crate::{location::Location, moves::utils::file};
 
-use super::Positions;
+use super::{utils::debug, Positions};
 
 const MASK: u64 = 0xa1100110a; //0x50880088500000;
 
@@ -22,4 +22,9 @@ pub fn knight_moves(pos: &Positions, loc: Location) -> u64 {
 fn test_knight() {
     let loc = (6, 6).into();
     assert_eq!(knight_moves(&Positions::new(0, 0), loc), 0x100010a000000000);
+}
+
+#[test]
+fn foo() {
+    debug(1407374883553280);
 }

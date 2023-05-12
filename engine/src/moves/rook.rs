@@ -51,14 +51,27 @@ pub(super) fn rank_leftside(pos: &Positions, loc: Location) -> u64 {
     // 0b01000111 & !0b01001000 = 0b00000111
     //                  ^ we want to remove this bit
     // ```
-    let ignore = brank + loc.pos();
+    let ignore = brank
+        .overflowing_add(loc.pos())
+        .0;
     let brank = brank & !ignore;
 
-    let self_block = (pos.mine + brank) & brank & !pos.mine;
+    let self_block = (pos
+        .mine
+        .overflowing_add(brank)
+        .0)
+        & brank
+        & !pos.mine;
 
     // We do the same as above but with oponent shifted to the left by one bit
     // because this will allow us to include it in the set of available moves
-    let attack = (2 * pos.opponent + brank) & brank & !(2 * pos.opponent);
+    let attack = (pos
+        .opponent
+        .overflowing_add(brank)
+        .0
+        << 1)
+        & brank
+        & !(pos.opponent << 1);
 
     // We intersect both sets to find the answer
     self_block & attack
