@@ -4,7 +4,7 @@ use std::mem::transmute;
 use crate::{
     bishop_moves,
     board::{Board, Player},
-    king_moves,
+    king_moves, knight_moves,
     location::Location,
     moves::bishop,
     pawn_moves, queen_moves, rook_moves,
@@ -59,7 +59,7 @@ impl<'a> MoveCache<'a> {
         });
         let knight = me.knight.map(|knight| {
             knight
-                .map(|knight| bishop_moves(pos, knight))
+                .map(|knight| knight_moves(pos, knight))
                 .unwrap_or_default()
         });
 

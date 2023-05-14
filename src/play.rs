@@ -18,8 +18,8 @@ pub fn Play(s: Scope) -> Element {
 
     let onclick = move |_| {
         let mut b = board.deref().clone();
-        b.play_with(&**params);
-        board.set(b);
+
+        board.set(b.play_with(&**params));
     };
 
     s.render(html! {

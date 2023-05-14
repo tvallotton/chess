@@ -69,24 +69,28 @@ impl Board {
 
     pub fn apply(&self, (to, from): (Location, Location)) -> Option<Board> {
         let pos = &Positions::from_board(self);
-        let from = self.search_for(from)?.index;
-        let mov = Move { to, from };
+        let mov = self
+            .moves_for_piece(from)
+            .find(|mov| mov.to == to)?;
         Some(self._apply(mov, pos))
     }
 
-    pub fn _apply(&self, mov: Move, pos: &Positions) -> Board {
-        let mut board = *self;
-
+    pub fn _apply(self, mov: Move, pos: &Positions) -> Board {
+        let mut board = self;
+        let me = board.me_mut();
+        let prom_rank = me.color.promotion_rank();
         let loc = unsafe {
-            board
-                .me_mut()
-                .get_mut(mov.from)
+            me.get_mut(mov.from)
                 .as_mut()
                 .unwrap_unchecked()
         };
-        *loc = mov.to;
+        loc.set(mov.to);
 
         let is_capture = (pos.opponent & mov.to.pos()) != 0;
+
+        if mov.to.rank() == prom_rank {
+            loc.promote();
+        }
 
         if is_capture {
             board
@@ -94,6 +98,7 @@ impl Board {
                 .remove(mov.to);
         }
 
+        board.meta.change_turn();
         board
     }
 
@@ -137,7 +142,7 @@ impl Player {
     pub fn white() -> Self {
         Player {
             color: White,
-            royalty: [(7, 4), (7, 3)]
+            royalty: [(7, 4), (4, 3)]
                 .map(Into::into)
                 .map(Some),
             bishop: [(7, 2), (7, 5)]
@@ -181,11 +186,11 @@ impl Player {
                 .map(Some),
             pawn: [
                 (1, 0),
-                (1, 1),
+                (2, 1),
                 (1, 2),
                 (1, 3),
                 (1, 4),
-                (1, 5),
+                (2, 5),
                 (1, 6),
                 (1, 7),
             ]
@@ -211,16 +216,21 @@ impl Board {
 
     pub fn search_for(self, index: Location) -> Option<Piece> {
         let find = |p: &Player| {
-            let (index, _) = p
+            let (index, loc) = p
                 .locations()
-                .into_iter()
+                .iter()
                 .enumerate()
-                .find(|(_, x)| **x == Some(index))?;
+                .filter_map(|(index, loc)| Some((index, loc.as_ref()?)))
+                .find(|(_, x)| **x == index)?;
             let index = PieceIndex(index as u8);
             Some(Piece {
-                kind: index.kind(),
                 color: p.color,
                 index,
+                kind: if loc.is_queen() && index.kind() == Kind::Pawn {
+                    Kind::Queen
+                } else {
+                    index.kind()
+                },
             })
         };
 

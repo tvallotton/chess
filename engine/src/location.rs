@@ -31,15 +31,26 @@ impl Location {
         let file = log % 8;
         loc(rank as u8, file as u8)
     }
-
+    #[inline]
     pub fn is_queen(self) -> bool {
         (self.0.get() & 0b10000000) != 0
     }
+    #[inline]
+    pub fn promote(&mut self) {
+        self.0 |= 0b10000000
+    }
 
+    pub fn set(&mut self, loc: Location) {
+        self.0 = unsafe {
+            NonZeroU8::new_unchecked(loc.0.get() & 0b01111111) | (self.0.get() & 0b10000000)
+        };
+    }
+
+    #[inline]
     pub fn invert(self) -> Self {
         (7 - self.rank(), 7 - self.file()).into()
     }
-
+    #[inline]
     pub fn transpose(self) -> Location {
         (self.file(), self.rank()).into()
     }

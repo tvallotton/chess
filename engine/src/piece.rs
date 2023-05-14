@@ -77,6 +77,16 @@ impl PieceIndex {
         }
     }
 }
+
+impl Color {
+    pub fn promotion_rank(self) -> u8 {
+        match self {
+            Color::White => 0,
+            Color::Black => 7,
+        }
+    }
+}
+
 impl Debug for PieceIndex {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}[{}]", self.kind(), self.0)

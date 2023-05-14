@@ -22,7 +22,7 @@ impl UseSelected {
         match *self.pos {
             Some(prev) => {
                 let mut board: Board = (*self.board).clone();
-                if let Some(_) = (&mut board).apply((pos, prev).into()) {
+                if let Some(board) = (&mut board).apply((pos, prev).into()) {
                     self.board.set(board);
                     self.pos.set(None);
                 } else {

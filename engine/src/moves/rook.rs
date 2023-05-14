@@ -18,7 +18,7 @@ pub fn rook_moves(pos: &Positions, loc: Location) -> u64 {
 pub(super) fn rank_positions(pos: &Positions, loc: Location) -> u64 {
     let leftside = rank_leftside(pos, loc);
     let rightside = invert(rank_leftside(&pos.invert(), loc.invert()));
-    (leftside | rightside) & !loc.pos()
+    leftside | rightside
 }
 #[inline]
 pub(super) fn file_positions(pos: &Positions, loc: Location) -> u64 {
@@ -56,8 +56,7 @@ pub(super) fn rank_leftside(pos: &Positions, loc: Location) -> u64 {
         .0;
     let brank = brank & !ignore;
 
-    let self_block = (pos
-        .mine
+    let self_block = ((pos.mine & !loc.pos())
         .overflowing_add(brank)
         .0)
         & brank
@@ -87,7 +86,7 @@ pub(super) fn file_downwards(pos: &Positions, loc: Location) -> u64 {
     let bfile = bfile & !ignore;
 
     // 2. We `or` mine with !bfile to let carries flow.
-    let mine = !bfile | pos.mine;
+    let mine = !bfile | (pos.mine & !loc.pos());
 
     // 3. We do the same for the opponent but shifted by one rank
     // because this will allow us to include it in the set of available moves

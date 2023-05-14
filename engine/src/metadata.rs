@@ -18,6 +18,9 @@ impl Metadata {
     pub fn turn(self) -> Color {
         unsafe { transmute(self.0 & CURRENT_TURN << 1) }
     }
+    pub fn change_turn(&mut self) {
+        self.0 = (!self.0 & CURRENT_TURN) | (self.0 & !CURRENT_TURN)
+    }
 
     pub fn kingside_castle(self, color: Color) -> bool {
         let castles = self.0 & KINGSIDE_CASTLE;

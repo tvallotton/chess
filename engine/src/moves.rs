@@ -63,15 +63,15 @@ impl<'a> Iterator for MoveIterator<'a> {
                 // // skip second 8 pieces if its empty
                 // let second_8 = (move_cache.halves[1] & *bit) == 0;
                 // piece.at_least(16 * second_8 as usize);
-                // if (piece.kind() == Kind::Knight && Location::from_pos(*bit).rank() == 6) {
-                //     log::debug!(
-                //         "moves: {moves} bit: {bit:?} loc: {:?} piece: {from:?} intersect: {}",
-                //         Location::from_pos(*bit),
-                //         moves & *bit
-                //     );
-                //     debug(moves);
-                //     debug(*bit);
-                // }
+                if (piece.kind() == Kind::Knight && from.kind() == Kind::Knight && from.0 == 4) {
+                    log::debug!(
+                        "moves: {moves} bit: {bit:?} loc: {:?} piece: {from:?} intersect: {}",
+                        Location::from_pos(*bit),
+                        moves & *bit
+                    );
+                    debug(moves);
+                    debug(*bit);
+                }
 
                 if (moves & *bit) != 0 {
                     log::debug!("YESS");
@@ -100,6 +100,9 @@ fn _moves<'a>(board: &'a Board, pos: &Positions) -> impl Iterator<Item = Move> +
 }
 pub fn moves(board: &Board) -> impl Iterator<Item = Move> + '_ {
     let pos = Positions::from_board(board);
+
+    debug(pos.mine);
+    debug(pos.opponent);
     _moves(board, &pos)
 }
 

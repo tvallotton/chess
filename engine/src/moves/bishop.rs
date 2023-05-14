@@ -30,7 +30,7 @@ pub(super) fn diagonal_moves(pos: &Positions, loc: Location, diag: u64) -> u64 {
     let diag = diag >> 8 * rank << 8 * rank;
 
     // 2. We only keep the positions on the diagonal
-    let mine = pos.mine & diag;
+    let mine = pos.mine & diag & !loc.pos();
     let opponent = pos.opponent & diag;
 
     // 3. we add to max, so any overflowing bits get removed (blocking the bishop)
