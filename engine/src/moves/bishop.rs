@@ -30,16 +30,17 @@ pub(super) fn diagonal_moves(pos: &Positions, loc: Location, diag: u64) -> u64 {
     let diag = diag >> 8 * rank << 8 * rank;
 
     // 2. We only keep the positions on the diagonal
-    let mine = pos.mine & diag & !loc.pos();
+    let mine = pos.mine & !loc.pos() & diag;
     let opponent = pos.opponent & diag;
 
-    // 3. we add to max, so any overflowing bits get removed (blocking the bishop)
+    // 3. We add to max, so any overflowing bits get removed (blocking the bishop)
     let unblocked_m = mine
         .overflowing_add(u64::MAX)
-        .0;
+        .0
+        & !mine;
 
     // 4. The opponent can be catured, so it is first moved one rank
-    let unblocked_o = (opponent << 8)
+    let unblocked_o = (opponent << 1)
         .overflowing_add(u64::MAX)
         .0;
 
