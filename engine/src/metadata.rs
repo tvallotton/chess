@@ -3,7 +3,7 @@ use std::{fmt::Debug, mem::transmute};
 use crate::piece::Color;
 use masks::*;
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Metadata(u8, bool);
 
 #[rustfmt::skip]

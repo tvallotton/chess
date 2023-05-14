@@ -5,18 +5,18 @@ use crate::{
     metadata::Metadata,
     moves::{children, moves, Color, Kind, Move, Piece, Positions, BISHOP},
     piece::{Color::*, PieceIndex},
-    search::minimax,
+    search::{minimax, search},
     Params,
 };
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub struct Board {
     pub white: Player,
     pub black: Player,
     pub meta: Metadata,
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 #[repr(C)]
 pub struct Player {
     pub royalty: [Option<Location>; 2],
@@ -126,7 +126,8 @@ impl Player {
     fn remove(&mut self, loc: Location) {
         fn rm_list<const D: usize>(pieces: &mut [Option<Location>; D], loc: Location) {
             for piece in pieces {
-                if *piece == Some(loc) {
+                let Some(p) = piece else { continue; };
+                if p.matches(loc) {
                     *piece = None
                 }
             }
@@ -202,18 +203,7 @@ impl Player {
 
 impl Board {
     pub fn play_with(&self, params: &Params) -> Board {
-        let mut children: Vec<_> = self.children().collect();
-
-        let buffers = &mut vec![Vec::with_capacity(params.depth as _); params.depth as _];
-        children.sort_by_cached_key(|board| {
-            let score = minimax(board, params.depth, i32::MIN, i32::MAX, params, buffers);
-            if board.me().color == White {
-                score
-            } else {
-                -score
-            }
-        });
-        children[0]
+        search(self, params)
     }
 
     pub fn search_for(self, index: Location) -> Option<Piece> {
@@ -223,7 +213,7 @@ impl Board {
                 .iter()
                 .enumerate()
                 .filter_map(|(index, loc)| Some((index, loc.as_ref()?)))
-                .find(|(_, x)| **x == index)?;
+                .find(|(_, x)| x.rank() == index.rank() && x.file() == index.file())?;
             let index = PieceIndex(index as u8);
             Some(Piece {
                 color: p.color,

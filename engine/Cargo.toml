@@ -9,6 +9,7 @@ edition = "2021"
 arrayvec = "0.7.2"
 getrandom = { version = "0.2.7", features = ["js"] }
 log = "0.4.17"
+lru = "0.10.0"
 rand = "0.8.5"
 
 serde = { version = "1.0.138", features = ["derive"] }

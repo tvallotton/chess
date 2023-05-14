@@ -51,7 +51,7 @@ fn player_material(player: &Player) -> i32 {
     is_alive(player.royalty[0]) * 9000
         + is_alive(player.royalty[1]) * 900
         + count(player.rook) * 5
-        + sum_value(player.bishop) * 3
+        + sum_value(player.bishop) * 35 / 10
         + sum_value(player.knight) * 3
         + pawns
 }

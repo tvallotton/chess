@@ -5,7 +5,7 @@ use std::{
     ops::BitOr,
 };
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Color {
     White = 0b10,
     Black = 0b11,

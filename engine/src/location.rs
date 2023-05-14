@@ -2,16 +2,14 @@ use std::{fmt::Debug, num::NonZeroU8, ops::BitOr};
 
 use crate::piece::PieceIndex;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Hash, Eq, PartialEq)]
 pub struct Location(NonZeroU8);
 
-impl PartialEq for Location {
-    fn eq(&self, other: &Self) -> bool {
-        (self.0.get() & 0b01111110) == (other.0.get() & 0b01111110)
-    }
-}
-
 impl Location {
+    pub fn matches(&self, other: Location) -> bool {
+        self.rank() == other.rank() && self.file() == other.file()
+    }
+
     pub fn rank(self) -> u8 {
         (self.0.get() >> 4) & 0b111
     }

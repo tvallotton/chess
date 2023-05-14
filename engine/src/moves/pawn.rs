@@ -18,7 +18,7 @@ pub fn left_captures(loc: Location, color: Color) -> u64 {
 pub fn right_captures(loc: Location, color: Color) -> u64 {
     match color {
         Color::White => loc.pos() >> 7 & !file(0),
-        Color::Black => loc.pos() << 7 & !file(0),
+        Color::Black => loc.pos() << 7 & !file(7),
     }
 }
 #[inline]

@@ -42,7 +42,8 @@ impl Props {
         }
     }
     fn selected(&self) -> &'static str {
-        if Some(self.pos) == *self.selected.pos {
+        let Some(pos) = &*self.selected.pos else { return "" };
+        if pos.matches(self.pos) {
             "selected"
         } else {
             ""
