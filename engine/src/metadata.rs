@@ -16,10 +16,13 @@ mod masks {
 
 impl Metadata {
     pub fn turn(self) -> Color {
-        unsafe { transmute(self.0 & CURRENT_TURN << 1) }
+        match self.0 & CURRENT_TURN {
+            0 => Color::Black,
+            _ => Color::White,
+        }
     }
     pub fn change_turn(&mut self) {
-        self.0 = (!self.0 & CURRENT_TURN) | (self.0 & !CURRENT_TURN)
+        self.0 = (!self.0 & CURRENT_TURN) | (self.0 & !CURRENT_TURN);
     }
 
     pub fn kingside_castle(self, color: Color) -> bool {

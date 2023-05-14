@@ -2,22 +2,24 @@ use super::{utils::file, Positions};
 use crate::{location::Location, moves::utils::rank, piece::Color};
 
 pub fn pawn_moves(pos: &Positions, loc: Location, color: Color) -> u64 {
-    let captures = left_captures(pos, loc, color) | right_captures(pos, loc, color);
-    captures | forwards(pos, loc, color)
+    let captures = left_captures(loc, color) | right_captures(loc, color);
+    (captures & pos.opponent) | forwards(pos, loc, color)
 }
 
 #[inline]
-pub fn left_captures(pos: &Positions, loc: Location, color: Color) -> u64 {
-    let white = (color == Color::White) as u8;
-    let black = (color == Color::Black) as u8;
-    loc.pos() >> (9 * white) << (9 * black) & !file(7) & pos.opponent
+pub fn left_captures(loc: Location, color: Color) -> u64 {
+    match color {
+        Color::White => loc.pos() >> 9 & !file(7),
+        Color::Black => loc.pos() << 9 & !file(0),
+    }
 }
 
 #[inline]
-pub fn right_captures(pos: &Positions, loc: Location, color: Color) -> u64 {
-    let white = (color == Color::White) as u8;
-    let black = (color == Color::Black) as u8;
-    loc.pos() >> (7 * white) << (7 * black) & !file(0) & pos.opponent
+pub fn right_captures(loc: Location, color: Color) -> u64 {
+    match color {
+        Color::White => loc.pos() >> 7 & !file(0),
+        Color::Black => loc.pos() << 7 & !file(0),
+    }
 }
 #[inline]
 pub fn forwards(pos: &Positions, loc: Location, color: Color) -> u64 {

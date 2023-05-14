@@ -142,7 +142,7 @@ impl Player {
     pub fn white() -> Self {
         Player {
             color: White,
-            royalty: [(7, 4), (4, 3)]
+            royalty: [(7, 4), (7, 3)]
                 .map(Into::into)
                 .map(Some),
             bishop: [(7, 2), (7, 5)]
@@ -186,11 +186,11 @@ impl Player {
                 .map(Some),
             pawn: [
                 (1, 0),
-                (2, 1),
+                (1, 1),
                 (1, 2),
                 (1, 3),
                 (1, 4),
-                (2, 5),
+                (1, 5),
                 (1, 6),
                 (1, 7),
             ]
@@ -203,12 +203,14 @@ impl Player {
 impl Board {
     pub fn play_with(&self, params: &Params) -> Board {
         let mut children: Vec<_> = self.children().collect();
+
+        let buffers = &mut vec![Vec::with_capacity(params.depth as _); params.depth as _];
         children.sort_by_cached_key(|board| {
-            let score = minimax(board, params.depth, i32::MIN, i32::MAX, params);
+            let score = minimax(board, params.depth, i32::MIN, i32::MAX, params, buffers);
             if board.me().color == White {
-                -score
-            } else {
                 score
+            } else {
+                -score
             }
         });
         children[0]
@@ -234,7 +236,6 @@ impl Board {
             })
         };
 
-        let me = self.me();
         find(self.me()).or_else(|| find(self.opponent()))
     }
 

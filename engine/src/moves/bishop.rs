@@ -9,7 +9,7 @@ pub fn bishop_moves(pos: &Positions, loc: Location) -> u64 {
     let down_left = leftside_moves(pos, loc);
     let up_right = invert(rightside_moves(&pos.invert(), loc.invert()));
     let up_left = invert(leftside_moves(&pos.invert(), loc.invert()));
-    down_right | down_left | up_right | up_left
+    (down_right | down_left | up_right | up_left) & !loc.pos()
 }
 
 /// Computes a single stoke in the X formed by the bishop
@@ -44,7 +44,7 @@ pub(super) fn diagonal_moves(pos: &Positions, loc: Location, diag: u64) -> u64 {
         .overflowing_add(u64::MAX)
         .0;
 
-    unblocked_m & unblocked_o & diag & !loc.pos()
+    unblocked_m & unblocked_o & diag
 }
 
 const DIAG: [u64; 2] = [0x8040201008040201, 0x102040810204080];

@@ -86,14 +86,14 @@ pub(super) fn file_downwards(pos: &Positions, loc: Location) -> u64 {
     let bfile = bfile & !ignore;
 
     // 2. We `or` mine with !bfile to let carries flow.
-    let mine = !bfile | (pos.mine & !loc.pos());
+    let mine = !bfile | pos.mine;
 
     // 3. We do the same for the opponent but shifted by one rank
     // because this will allow us to include it in the set of available moves
     let opponent = !bfile | pos.opponent << 8;
 
     // 4. We merge the two blocking bitfields
-    let blocking = mine | opponent;
+    let blocking = (mine | opponent) & !loc.pos();
 
     // 5. We add the file will mine to carry out the  bits
     // after the blocking piece.
